@@ -83,7 +83,10 @@
                 <h1 class="text-xl sm:text-2xl font-black tracking-wider text-transparent bg-clip-text bg-gradient-to-r from-amber-400 via-rose-400 to-cyan-300">
                     BOMBER HERO EX
                 </h1>
-                <p class="text-xs text-slate-400 hidden sm:block">Boss Battles & Special Abilities</p>
+                <div class="flex items-center gap-2 text-xs text-slate-400 mt-0.5">
+                    <span class="px-1.5 py-0.5 rounded bg-slate-800 border border-slate-700/80 font-mono text-[10px] text-amber-400 font-bold tracking-tight">v1.2.0</span>
+                    <span class="hidden sm:inline">Boss Battles & Special Abilities</span>
+                </div>
             </div>
         </div>
 
@@ -579,11 +582,11 @@
             moveWithCollision(moveX, moveY) {
                 const margin = this.radius * 0.8;
 
-                // Check bomb kicking before moving
+                // Check bomb kicking before moving (Only if player is completely outside the bomb tile)
                 if (this.hasKick && (moveX !== 0 || moveY !== 0)) {
                     const targetGx = Math.floor((this.x + Math.sign(moveX) * (this.radius + 6)) / CELL_SIZE);
                     const targetGy = Math.floor((this.y + Math.sign(moveY) * (this.radius + 6)) / CELL_SIZE);
-                    const hitBomb = bombs.find(b => b.gx === targetGx && b.gy === targetGy && !b.slideVx && !b.slideVy);
+                    const hitBomb = bombs.find(b => b.gx === targetGx && b.gy === targetGy && !b.passableByPlayer && !b.slideVx && !b.slideVy);
                     if (hitBomb) {
                         let kx = 0, ky = 0;
                         if (Math.abs(moveX) > Math.abs(moveY)) kx = Math.sign(moveX);
@@ -723,11 +726,24 @@
                 if (this.lives <= 0) {
                     gameOver();
                 } else {
+                    this.resetPowerups();
+                    createFloatingText(this.x, this.y, "ITEMS LOST!", "#ef4444");
                     this.isInvincible = true;
                     this.invincibleTimer = 2.5;
                     this.x = (1 + 0.5) * CELL_SIZE;
                     this.y = (1 + 0.5) * CELL_SIZE;
                 }
+            }
+
+            resetPowerups() {
+                this.bombRange = 1;
+                this.maxBombs = 1;
+                this.speedMultiplier = 1.0;
+                this.hasKick = false;
+                this.hasShield = false;
+                this.hasRemote = false;
+                this.curseTimer = 0;
+                updateHUDPerks();
             }
 
             draw(ctx) {
@@ -1257,7 +1273,16 @@
                 }
             }
 
-            player = new Player(1, 1);
+            if (!player) {
+                player = new Player(1, 1);
+            } else {
+                player.x = (1 + 0.5) * CELL_SIZE;
+                player.y = (1 + 0.5) * CELL_SIZE;
+                player.activeBombs = 0;
+                player.isInvincible = false;
+                player.invincibleTimer = 0;
+                player.curseTimer = 0;
+            }
 
             enemies = [];
             boss = null;
@@ -1334,6 +1359,14 @@
             perkKick.style.opacity = player.hasKick ? "1" : "0.4";
             perkShield.style.opacity = player.hasShield ? "1" : "0.4";
             perkRemote.style.opacity = player.hasRemote ? "1" : "0.4";
+
+            if (player.hasRemote) {
+                btnDetonate.classList.remove('hidden');
+                btnDetonate.classList.add('flex');
+            } else {
+                btnDetonate.classList.add('hidden');
+                btnDetonate.classList.remove('flex');
+            }
         }
 
         function update(delta) {
@@ -1532,7 +1565,7 @@
             const remoteBombs = bombs.filter(b => b.owner === player && b.isRemote);
             if (remoteBombs.length > 0) {
                 audio.playKick();
-                remoteBombs.forEach(b => b.explode());
+                remoteBombs[0].explode(); // 置いた順番（一番古い爆弾）に1つずつ起爆
             }
         }
 
@@ -1575,6 +1608,9 @@
                     <h2 class="text-3xl font-black tracking-wide text-transparent bg-clip-text bg-gradient-to-r from-amber-300 via-rose-300 to-cyan-300">
                         BOMBER HERO EX
                     </h2>
+                    <div class="inline-block px-2 py-0.5 rounded-md bg-slate-800 border border-slate-700/80 font-mono text-xs text-amber-400 font-bold">
+                        v1.2.0
+                    </div>
                     <p class="text-xs text-slate-300 leading-relaxed">
                         Defeat monsters, conquer Boss stages, collect powerful perks (👟 Bomb Kick, 🛡️ Shield, 🎮 Remote Detonator) and reach the Exit!
                     </p>
@@ -1594,6 +1630,7 @@
             stage = 1;
             gameState = 'PLAYING';
             hideModal();
+            player = new Player(1, 1);
             generateMap();
             startTimer();
         }
