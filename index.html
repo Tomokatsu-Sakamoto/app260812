@@ -577,10 +577,10 @@
             }
 
             moveWithCollision(moveX, moveY) {
-                const slideThreshold = CELL_SIZE * 0.35;
+                const margin = this.radius * 0.8;
 
                 // Check bomb kicking before moving
-                if (this.hasKick) {
+                if (this.hasKick && (moveX !== 0 || moveY !== 0)) {
                     const targetGx = Math.floor((this.x + Math.sign(moveX) * (this.radius + 6)) / CELL_SIZE);
                     const targetGy = Math.floor((this.y + Math.sign(moveY) * (this.radius + 6)) / CELL_SIZE);
                     const hitBomb = bombs.find(b => b.gx === targetGx && b.gy === targetGy && !b.slideVx && !b.slideVy);
@@ -596,45 +596,80 @@
                     }
                 }
 
-                // Try X movement with corner sliding helper
+                const slideSpeed = Math.min(this.speed * 1.15, CELL_SIZE * 0.14);
+
+                // 1. Horizontal Movement with Smooth Corner Assist
                 if (moveX !== 0) {
                     let newX = this.x + moveX;
                     if (!this.checkWallCollision(newX, this.y)) {
                         this.x = newX;
                     } else {
-                        const currentGy = Math.floor(this.y / CELL_SIZE);
-                        const centerY = (currentGy + 0.5) * CELL_SIZE;
-                        const diffY = centerY - this.y;
-                        if (Math.abs(diffY) < slideThreshold) {
-                            const slideDir = Math.sign(diffY);
-                            const slideAmount = Math.min(Math.abs(diffY), this.speed);
-                            if (!this.checkWallCollision(newX, this.y + slideDir * slideAmount)) {
-                                this.y += slideDir * slideAmount;
-                                this.x = newX;
+                        // Check front corners to slide into open hallway
+                        const frontX = newX + Math.sign(moveX) * margin;
+                        const topSolid = this.isPointSolid(frontX, this.y - margin);
+                        const bottomSolid = this.isPointSolid(frontX, this.y + margin);
+
+                        if (topSolid && !bottomSolid) {
+                            // Top corner hitting wall, bottom is open -> Nudge DOWN into hallway
+                            if (!this.checkWallCollision(this.x, this.y + slideSpeed)) {
+                                this.y += slideSpeed;
+                                if (!this.checkWallCollision(newX, this.y)) {
+                                    this.x = newX;
+                                }
+                            }
+                        } else if (!topSolid && bottomSolid) {
+                            // Bottom corner hitting wall, top is open -> Nudge UP into hallway
+                            if (!this.checkWallCollision(this.x, this.y - slideSpeed)) {
+                                this.y -= slideSpeed;
+                                if (!this.checkWallCollision(newX, this.y)) {
+                                    this.x = newX;
+                                }
                             }
                         }
                     }
                 }
 
-                // Try Y movement with corner sliding helper
+                // 2. Vertical Movement with Smooth Corner Assist
                 if (moveY !== 0) {
                     let newY = this.y + moveY;
                     if (!this.checkWallCollision(this.x, newY)) {
                         this.y = newY;
                     } else {
-                        const currentGx = Math.floor(this.x / CELL_SIZE);
-                        const centerX = (currentGx + 0.5) * CELL_SIZE;
-                        const diffX = centerX - this.x;
-                        if (Math.abs(diffX) < slideThreshold) {
-                            const slideDir = Math.sign(diffX);
-                            const slideAmount = Math.min(Math.abs(diffX), this.speed);
-                            if (!this.checkWallCollision(this.x + slideDir * slideAmount, newY)) {
-                                this.x += slideDir * slideAmount;
-                                this.y = newY;
+                        // Check front corners to slide into open hallway
+                        const frontY = newY + Math.sign(moveY) * margin;
+                        const leftSolid = this.isPointSolid(this.x - margin, frontY);
+                        const rightSolid = this.isPointSolid(this.x + margin, frontY);
+
+                        if (leftSolid && !rightSolid) {
+                            // Left corner hitting wall, right is open -> Nudge RIGHT into hallway
+                            if (!this.checkWallCollision(this.x + slideSpeed, this.y)) {
+                                this.x += slideSpeed;
+                                if (!this.checkWallCollision(this.x, newY)) {
+                                    this.y = newY;
+                                }
+                            }
+                        } else if (!leftSolid && rightSolid) {
+                            // Right corner hitting wall, left is open -> Nudge LEFT into hallway
+                            if (!this.checkWallCollision(this.x - slideSpeed, this.y)) {
+                                this.x -= slideSpeed;
+                                if (!this.checkWallCollision(this.x, newY)) {
+                                    this.y = newY;
+                                }
                             }
                         }
                     }
                 }
+            }
+
+            isPointSolid(px, py) {
+                const gx = Math.floor(px / CELL_SIZE);
+                const gy = Math.floor(py / CELL_SIZE);
+                if (gx < 0 || gx >= GRID_COLS || gy < 0 || gy >= GRID_ROWS) return true;
+                const tile = grid[gy][gx];
+                if (tile === TILE.HARD_WALL || tile === TILE.SOFT_WALL) return true;
+                const bombOnTile = bombs.find(b => b.gx === gx && b.gy === gy);
+                if (bombOnTile && !bombOnTile.passableByPlayer) return true;
+                return false;
             }
 
             checkWallCollision(x, y) {
