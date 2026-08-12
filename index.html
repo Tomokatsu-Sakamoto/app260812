@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Bomber Hero - Arcade Action</title>
+    <title>Bomber Hero EX - Arcade Action & Boss Battles</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- FontAwesome for Icons -->
@@ -30,11 +30,11 @@
         canvas {
             image-rendering: pixelated;
             border-radius: 12px;
-            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5), 0 10px 10px -5px rgba(0, 0, 0, 0.3);
-            background-color: #1e293b;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.6), 0 10px 10px -5px rgba(0, 0, 0, 0.4);
+            background-color: #0f172a;
         }
         .glass-panel {
-            background: rgba(30, 41, 59, 0.75);
+            background: rgba(30, 41, 59, 0.85);
             backdrop-filter: blur(12px);
             border: 1px solid rgba(255, 255, 255, 0.12);
         }
@@ -46,15 +46,22 @@
             transform: translateY(2px);
             box-shadow: 0 2px 0 #0f172a;
         }
-        .action-btn {
+        .action-btn-bomb {
             background: linear-gradient(145deg, #ef4444, #dc2626);
             box-shadow: 0 6px 0 #991b1b;
         }
-        .action-btn:active {
+        .action-btn-bomb:active {
             transform: translateY(3px);
             box-shadow: 0 3px 0 #991b1b;
         }
-        /* Custom Keyframe Animations */
+        .action-btn-detonate {
+            background: linear-gradient(145deg, #3b82f6, #2563eb);
+            box-shadow: 0 6px 0 #1e40af;
+        }
+        .action-btn-detonate:active {
+            transform: translateY(3px);
+            box-shadow: 0 3px 0 #1e40af;
+        }
         @keyframes pulse-glow {
             0%, 100% { filter: drop-shadow(0 0 12px rgba(239, 68, 68, 0.8)); }
             50% { filter: drop-shadow(0 0 24px rgba(245, 158, 11, 0.9)); }
@@ -64,23 +71,23 @@
         }
     </style>
 </head>
-<body class="flex flex-col items-center justify-between min-h-screen p-2 sm:p-4">
+<body class="flex flex-col items-center justify-between min-h-screen p-2 sm:p-4 select-none">
 
     <!-- Header Controls & Title -->
     <header class="w-full max-w-4xl flex justify-between items-center mb-2 px-2">
         <div class="flex items-center gap-2 sm:gap-3">
-            <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-red-500 to-amber-400 flex items-center justify-center shadow-lg">
-                <i class="fa-solid font-bold fa-bomb text-2xl text-slate-900"></i>
+            <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-amber-500 via-rose-500 to-indigo-500 flex items-center justify-center shadow-lg title-glow">
+                <i class="fa-solid fa-bomb text-2xl text-slate-900"></i>
             </div>
             <div>
-                <h1 class="text-xl sm:text-2xl font-bold tracking-wide text-transparent bg-clip-text bg-gradient-to-r from-amber-400 via-rose-400 to-indigo-300">
-                    BOMBER HERO
+                <h1 class="text-xl sm:text-2xl font-black tracking-wider text-transparent bg-clip-text bg-gradient-to-r from-amber-400 via-rose-400 to-cyan-300">
+                    BOMBER HERO EX
                 </h1>
-                <p class="text-xs text-slate-400 hidden sm:block">Classic MVP Action Game</p>
+                <p class="text-xs text-slate-400 hidden sm:block">Boss Battles & Special Abilities</p>
             </div>
         </div>
 
-        <!-- Controls: Sound & Pause -->
+        <!-- Audio & Pause Controls -->
         <div class="flex items-center gap-2">
             <button id="soundToggleBtn" class="glass-panel p-2.5 rounded-xl hover:bg-slate-700/50 transition active:scale-95 text-slate-300 hover:text-white" title="Toggle Sound">
                 <i id="soundIcon" class="fa-solid fa-volume-high text-lg"></i>
@@ -92,29 +99,52 @@
     </header>
 
     <!-- Scoreboards & HUD -->
-    <div class="w-full max-w-4xl glass-panel rounded-2xl p-3 mb-3 flex flex-wrap justify-between items-center text-sm sm:text-base gap-2">
-        <div class="flex items-center gap-2 px-3 py-1 bg-slate-800/80 rounded-xl border border-slate-700/50">
+    <div class="w-full max-w-4xl glass-panel rounded-2xl p-3 mb-2 flex flex-wrap justify-between items-center text-sm sm:text-base gap-2">
+        <div class="flex items-center gap-2 px-3 py-1 bg-slate-800/90 rounded-xl border border-slate-700/50">
             <i class="fa-solid fa-heart text-rose-500 text-lg animate-pulse"></i>
-            <span class="text-slate-400">LIVES:</span>
+            <span class="text-slate-400 text-xs sm:text-sm">LIVES:</span>
             <span id="livesVal" class="font-bold text-amber-400 pixel-font text-sm">3</span>
         </div>
 
-        <div class="flex items-center gap-2 px-3 py-1 bg-slate-800/80 rounded-xl border border-slate-700/50">
+        <div class="flex items-center gap-2 px-3 py-1 bg-slate-800/90 rounded-xl border border-slate-700/50">
             <i class="fa-solid fa-trophy text-amber-400 text-lg"></i>
-            <span class="text-slate-400">SCORE:</span>
+            <span class="text-slate-400 text-xs sm:text-sm">SCORE:</span>
             <span id="scoreVal" class="font-bold text-emerald-400 pixel-font text-sm">00000</span>
         </div>
 
-        <div class="flex items-center gap-2 px-3 py-1 bg-slate-800/80 rounded-xl border border-slate-700/50">
+        <div class="flex items-center gap-2 px-3 py-1 bg-slate-800/90 rounded-xl border border-slate-700/50">
+            <i class="fa-solid fa-layer-group text-purple-400 text-lg"></i>
+            <span class="text-slate-400 text-xs sm:text-sm">STAGE:</span>
+            <span id="stageVal" class="font-bold text-purple-300 pixel-font text-sm">1</span>
+        </div>
+
+        <div class="flex items-center gap-2 px-3 py-1 bg-slate-800/90 rounded-xl border border-slate-700/50">
             <i class="fa-solid fa-clock text-cyan-400 text-lg"></i>
-            <span class="text-slate-400">TIME:</span>
+            <span class="text-slate-400 text-xs sm:text-sm">TIME:</span>
             <span id="timeVal" class="font-bold text-cyan-300 pixel-font text-sm">180</span>
         </div>
 
-        <div class="flex items-center gap-2 px-3 py-1 bg-slate-800/80 rounded-xl border border-slate-700/50">
-            <i class="fa-solid fa-ghost text-purple-400 text-lg"></i>
-            <span class="text-slate-400">ENEMIES:</span>
-            <span id="enemiesVal" class="font-bold text-purple-300 pixel-font text-sm">0</span>
+        <!-- Perks & Power-ups Indicators -->
+        <div class="flex items-center gap-1.5 px-3 py-1 bg-slate-800/90 rounded-xl border border-slate-700/50" id="perksContainer">
+            <span id="perkFire" class="opacity-40 transition-opacity" title="Flame Range">🔥<span id="fireLevel">1</span></span>
+            <span id="perkBomb" class="opacity-40 transition-opacity" title="Max Bombs">💣<span id="bombLevel">1</span></span>
+            <span id="perkSpeed" class="opacity-40 transition-opacity" title="Speed">⚡</span>
+            <span id="perkKick" class="opacity-40 transition-opacity" title="Bomb Kick">👟</span>
+            <span id="perkShield" class="opacity-40 transition-opacity" title="Shield">🛡️</span>
+            <span id="perkRemote" class="opacity-40 transition-opacity" title="Remote Detonator">🎮</span>
+        </div>
+    </div>
+
+    <!-- Boss Health Bar Container (Shown on Boss Stages) -->
+    <div id="bossBarContainer" class="w-full max-w-4xl glass-panel rounded-xl p-2 mb-2 hidden flex-col gap-1">
+        <div class="flex justify-between items-center text-xs font-bold px-1">
+            <span class="text-rose-400 flex items-center gap-1">
+                <i class="fa-solid fa-crown text-amber-400"></i> BOSS: GIGA BOMB KING
+            </span>
+            <span id="bossHpText" class="text-amber-300 pixel-font text-xs">HP 10/10</span>
+        </div>
+        <div class="w-full h-3 bg-slate-800 rounded-full overflow-hidden border border-slate-700">
+            <div id="bossHpBar" class="h-full bg-gradient-to-r from-rose-600 via-amber-500 to-emerald-400 w-full transition-all duration-300"></div>
         </div>
     </div>
 
@@ -124,9 +154,8 @@
 
         <!-- Overlay Modals (Start, Game Over, Stage Clear, Pause) -->
         <div id="modalOverlay" class="absolute inset-0 bg-slate-950/85 backdrop-blur-md rounded-2xl flex flex-col items-center justify-center p-6 text-center z-20">
-            <!-- Dynamic Content Injected Here -->
             <div id="modalContent" class="max-w-md w-full space-y-5">
-                <!-- Injected via JS -->
+                <!-- Dynamic Content Injected Here -->
             </div>
         </div>
     </main>
@@ -146,9 +175,14 @@
             <div></div>
         </div>
 
-        <!-- Bomb Action Button -->
-        <div class="flex flex-col items-center gap-2">
-            <button id="btnBomb" class="action-btn w-24 h-24 rounded-full flex flex-col items-center justify-center text-white font-bold shadow-xl active:scale-95 transition">
+        <!-- Action Buttons (Bomb & Detonate) -->
+        <div class="flex items-center gap-3">
+            <button id="btnDetonate" class="action-btn-detonate hidden w-16 h-16 rounded-full flex flex-col items-center justify-center text-white font-bold shadow-xl active:scale-95 transition">
+                <i class="fa-solid fa-gamepad text-xl mb-0.5"></i>
+                <span class="text-[10px] font-black">DET</span>
+            </button>
+
+            <button id="btnBomb" class="action-btn-bomb w-24 h-24 rounded-full flex flex-col items-center justify-center text-white font-bold shadow-xl active:scale-95 transition">
                 <i class="fa-solid fa-bomb text-3xl mb-1"></i>
                 <span class="text-xs font-black tracking-widest">BOMB</span>
             </button>
@@ -157,14 +191,16 @@
 
     <!-- Keyboard Instructions for Desktop -->
     <p class="hidden sm:block text-xs text-slate-400 mt-2 text-center">
-        <span class="px-2 py-1 bg-slate-800 rounded border border-slate-700 text-slate-300">WASD</span> or 
-        <span class="px-2 py-1 bg-slate-800 rounded border border-slate-700 text-slate-300">Arrow Keys</span> : Move &nbsp;|&nbsp; 
-        <span class="px-2 py-1 bg-slate-800 rounded border border-slate-700 text-slate-300">SPACE</span> : Drop Bomb &nbsp;|&nbsp; 
-        <span class="px-2 py-1 bg-slate-800 rounded border border-slate-700 text-slate-300">P</span> : Pause
+        <span class="px-2 py-1 bg-slate-800 rounded border border-slate-700 text-slate-300">WASD</span> / 
+        <span class="px-2 py-1 bg-slate-800 rounded border border-slate-700 text-slate-300">Arrows</span>: Move &nbsp;|&nbsp; 
+        <span class="px-2 py-1 bg-slate-800 rounded border border-slate-700 text-slate-300">SPACE</span>: Drop Bomb &nbsp;|&nbsp; 
+        <span class="px-2 py-1 bg-slate-800 rounded border border-slate-700 text-slate-300">E / SHIFT</span>: Detonate Remote &nbsp;|&nbsp; 
+        <span class="px-2 py-1 bg-slate-800 rounded border border-slate-700 text-slate-300">P</span>: Pause
     </p>
 
     <!-- JavaScript Game Logic -->
     <script>
+        // Web Audio Synthesizer Class
         class AudioController {
             constructor() {
                 this.ctx = null;
@@ -183,7 +219,7 @@
 
             playExplosion() {
                 if (this.muted || !this.ctx) return;
-                const bufferSize = this.ctx.sampleRate * 0.4;
+                const bufferSize = this.ctx.sampleRate * 0.45;
                 const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
                 const data = buffer.getChannelData(0);
                 for (let i = 0; i < bufferSize; i++) {
@@ -194,12 +230,12 @@
 
                 const filter = this.ctx.createBiquadFilter();
                 filter.type = 'lowpass';
-                filter.frequency.setValueAtTime(800, this.ctx.currentTime);
-                filter.frequency.exponentialRampToValueAtTime(30, this.ctx.currentTime + 0.4);
+                filter.frequency.setValueAtTime(900, this.ctx.currentTime);
+                filter.frequency.exponentialRampToValueAtTime(40, this.ctx.currentTime + 0.45);
 
                 const gain = this.ctx.createGain();
-                gain.gain.setValueAtTime(0.7, this.ctx.currentTime);
-                gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.4);
+                gain.gain.setValueAtTime(0.8, this.ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.45);
 
                 noise.connect(filter);
                 filter.connect(gain);
@@ -212,8 +248,8 @@
                 const osc = this.ctx.createOscillator();
                 const gain = this.ctx.createGain();
                 osc.type = 'sine';
-                osc.frequency.setValueAtTime(300, this.ctx.currentTime);
-                osc.frequency.exponentialRampToValueAtTime(120, this.ctx.currentTime + 0.15);
+                osc.frequency.setValueAtTime(320, this.ctx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(110, this.ctx.currentTime + 0.15);
 
                 gain.gain.setValueAtTime(0.3, this.ctx.currentTime);
                 gain.gain.linearRampToValueAtTime(0.01, this.ctx.currentTime + 0.15);
@@ -227,20 +263,20 @@
             playPowerup() {
                 if (this.muted || !this.ctx) return;
                 const now = this.ctx.currentTime;
-                const freqs = [330, 440, 554, 659, 880];
+                const freqs = [330, 440, 554, 659, 880, 1108];
                 freqs.forEach((freq, idx) => {
                     const osc = this.ctx.createOscillator();
                     const gain = this.ctx.createGain();
                     osc.type = 'triangle';
-                    osc.frequency.setValueAtTime(freq, now + idx * 0.05);
+                    osc.frequency.setValueAtTime(freq, now + idx * 0.04);
 
-                    gain.gain.setValueAtTime(0.2, now + idx * 0.05);
-                    gain.gain.exponentialRampToValueAtTime(0.01, now + idx * 0.05 + 0.1);
+                    gain.gain.setValueAtTime(0.2, now + idx * 0.04);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + idx * 0.04 + 0.08);
 
                     osc.connect(gain);
                     gain.connect(this.ctx.destination);
-                    osc.start(now + idx * 0.05);
-                    osc.stop(now + idx * 0.05 + 0.1);
+                    osc.start(now + idx * 0.04);
+                    osc.stop(now + idx * 0.04 + 0.08);
                 });
             }
 
@@ -249,8 +285,8 @@
                 const osc = this.ctx.createOscillator();
                 const gain = this.ctx.createGain();
                 osc.type = 'sawtooth';
-                osc.frequency.setValueAtTime(180, this.ctx.currentTime);
-                osc.frequency.linearRampToValueAtTime(60, this.ctx.currentTime + 0.3);
+                osc.frequency.setValueAtTime(200, this.ctx.currentTime);
+                osc.frequency.linearRampToValueAtTime(50, this.ctx.currentTime + 0.3);
 
                 gain.gain.setValueAtTime(0.5, this.ctx.currentTime);
                 gain.gain.linearRampToValueAtTime(0.01, this.ctx.currentTime + 0.3);
@@ -261,21 +297,72 @@
                 osc.stop(this.ctx.currentTime + 0.3);
             }
 
+            playKick() {
+                if (this.muted || !this.ctx) return;
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(150, this.ctx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(400, this.ctx.currentTime + 0.12);
+
+                gain.gain.setValueAtTime(0.4, this.ctx.currentTime);
+                gain.gain.linearRampToValueAtTime(0.01, this.ctx.currentTime + 0.12);
+
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+                osc.start();
+                osc.stop(this.ctx.currentTime + 0.12);
+            }
+
+            playShield() {
+                if (this.muted || !this.ctx) return;
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(600, this.ctx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(900, this.ctx.currentTime + 0.2);
+
+                gain.gain.setValueAtTime(0.3, this.ctx.currentTime);
+                gain.gain.linearRampToValueAtTime(0.01, this.ctx.currentTime + 0.2);
+
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+                osc.start();
+                osc.stop(this.ctx.currentTime + 0.2);
+            }
+
+            playBossHit() {
+                if (this.muted || !this.ctx) return;
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(100, this.ctx.currentTime);
+                osc.frequency.linearRampToValueAtTime(30, this.ctx.currentTime + 0.3);
+
+                gain.gain.setValueAtTime(0.6, this.ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.3);
+
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+                osc.start();
+                osc.stop(this.ctx.currentTime + 0.3);
+            }
+
             playWin() {
                 if (this.muted || !this.ctx) return;
-                const notes = [523.25, 659.25, 783.99, 1046.50];
+                const notes = [523.25, 659.25, 783.99, 1046.50, 1318.51];
                 const now = this.ctx.currentTime;
                 notes.forEach((freq, i) => {
                     const osc = this.ctx.createOscillator();
                     const gain = this.ctx.createGain();
                     osc.type = 'square';
                     osc.frequency.value = freq;
-                    gain.gain.setValueAtTime(0.2, now + i * 0.12);
-                    gain.gain.linearRampToValueAtTime(0.01, now + i * 0.12 + 0.2);
+                    gain.gain.setValueAtTime(0.2, now + i * 0.1);
+                    gain.gain.linearRampToValueAtTime(0.01, now + i * 0.1 + 0.2);
                     osc.connect(gain);
                     gain.connect(this.ctx.destination);
-                    osc.start(now + i * 0.12);
-                    osc.stop(now + i * 0.12 + 0.2);
+                    osc.start(now + i * 0.1);
+                    osc.stop(now + i * 0.1 + 0.2);
                 });
             }
         }
@@ -292,10 +379,42 @@
         };
 
         const ITEM_TYPE = {
-            FIRE: 1,  // Increases bomb explosion range
-            BOMB: 2,  // Increases max bombs count
-            SPEED: 3  // Increases player movement speed
+            FIRE: 1,    // 🔥 Bomb Range + 1
+            BOMB: 2,    // 💣 Max Bombs + 1
+            SPEED: 3,   // ⚡ Speed + 20%
+            KICK: 4,    // 👟 Kick Bombs
+            SHIELD: 5,  // 🛡️ Protects 1 Hit
+            REMOTE: 6,  // 🎮 Remote Detonator
+            SKULL: 7    // 💀 Temporary Speed Curse
         };
+
+        // Environment Stage Themes
+        const STAGE_THEMES = [
+            {
+                name: "Emerald Garden",
+                floor1: "#1e293b", floor2: "#0f172a",
+                hardWall: "#334155", hardWallBorder: "#475569",
+                softWall: "#b45309", softWallLine: "#78350f"
+            },
+            {
+                name: "Cyber Grid",
+                floor1: "#1e1b4b", floor2: "#0f172a",
+                hardWall: "#4c1d95", hardWallBorder: "#6d28d9",
+                softWall: "#0284c7", softWallLine: "#0369a1"
+            },
+            {
+                name: "Volcanic Lair",
+                floor1: "#450a0a", floor2: "#1c1917",
+                hardWall: "#78350f", hardWallBorder: "#9a3412",
+                softWall: "#dc2626", softWallLine: "#991b1b"
+            },
+            {
+                name: "Frozen Temple",
+                floor1: "#083344", floor2: "#0f172a",
+                hardWall: "#155e75", hardWallBorder: "#0891b2",
+                softWall: "#38bdf8", softWallLine: "#0284c7"
+            }
+        ];
 
         const audio = new AudioController();
 
@@ -306,13 +425,27 @@
         // UI Element References
         const livesVal = document.getElementById('livesVal');
         const scoreVal = document.getElementById('scoreVal');
+        const stageVal = document.getElementById('stageVal');
         const timeVal = document.getElementById('timeVal');
-        const enemiesVal = document.getElementById('enemiesVal');
         const modalOverlay = document.getElementById('modalOverlay');
         const modalContent = document.getElementById('modalContent');
         const soundToggleBtn = document.getElementById('soundToggleBtn');
         const soundIcon = document.getElementById('soundIcon');
         const pauseBtn = document.getElementById('pauseBtn');
+        const btnDetonate = document.getElementById('btnDetonate');
+        const bossBarContainer = document.getElementById('bossBarContainer');
+        const bossHpBar = document.getElementById('bossHpBar');
+        const bossHpText = document.getElementById('bossHpText');
+
+        // HUD Perk Indicators
+        const perkFire = document.getElementById('perkFire');
+        const perkBomb = document.getElementById('perkBomb');
+        const perkSpeed = document.getElementById('perkSpeed');
+        const perkKick = document.getElementById('perkKick');
+        const perkShield = document.getElementById('perkShield');
+        const perkRemote = document.getElementById('perkRemote');
+        const fireLevel = document.getElementById('fireLevel');
+        const bombLevel = document.getElementById('bombLevel');
 
         // Game State Variables
         let gameState = 'START'; // 'START', 'PLAYING', 'PAUSED', 'GAMEOVER', 'CLEAR'
@@ -322,6 +455,7 @@
         let explosions = [];
         let particles = [];
         let enemies = [];
+        let boss = null;
         let player = null;
 
         let score = 0;
@@ -336,7 +470,8 @@
             down: false,
             left: false,
             right: false,
-            bomb: false
+            bomb: false,
+            detonate: false
         };
 
         class Player {
@@ -353,10 +488,18 @@
                 this.isInvincible = false;
                 this.invincibleTimer = 0;
                 this.facing = 'down';
+
+                // New Perks & Statuses
+                this.hasKick = false;
+                this.hasShield = false;
+                this.hasRemote = false;
+                this.curseTimer = 0;
             }
 
             get speed() {
-                return this.baseSpeed * this.speedMultiplier;
+                let s = this.baseSpeed * this.speedMultiplier;
+                if (this.curseTimer > 0) s *= 0.6; // Cursed slowness
+                return s;
             }
 
             update(delta) {
@@ -367,6 +510,10 @@
                     }
                 }
 
+                if (this.curseTimer > 0) {
+                    this.curseTimer -= delta;
+                }
+
                 let dx = 0;
                 let dy = 0;
 
@@ -375,7 +522,6 @@
                 if (keys.left) { dx -= 1; this.facing = 'left'; }
                 if (keys.right) { dx += 1; this.facing = 'right'; }
 
-                // Normalize vector for diagonal movement
                 if (dx !== 0 && dy !== 0) {
                     dx *= 0.7071;
                     dy *= 0.7071;
@@ -399,16 +545,33 @@
                         this.maxBombs++;
                         createFloatingText(this.x, this.y, "BOMB +1!", "#3b82f6");
                     } else if (item.type === ITEM_TYPE.SPEED) {
-                        this.speedMultiplier = Math.min(this.speedMultiplier + 0.25, 2.0);
+                        this.speedMultiplier = Math.min(this.speedMultiplier + 0.2, 2.0);
                         createFloatingText(this.x, this.y, "SPEED UP!", "#10b981");
+                    } else if (item.type === ITEM_TYPE.KICK) {
+                        this.hasKick = true;
+                        createFloatingText(this.x, this.y, "BOMB KICK!", "#eab308");
+                    } else if (item.type === ITEM_TYPE.SHIELD) {
+                        this.hasShield = true;
+                        createFloatingText(this.x, this.y, "SHIELD ON!", "#38bdf8");
+                    } else if (item.type === ITEM_TYPE.REMOTE) {
+                        this.hasRemote = true;
+                        btnDetonate.classList.remove('hidden');
+                        btnDetonate.classList.add('flex');
+                        createFloatingText(this.x, this.y, "REMOTE DETONATOR!", "#a855f7");
+                    } else if (item.type === ITEM_TYPE.SKULL) {
+                        this.curseTimer = 6.0;
+                        createFloatingText(this.x, this.y, "CURSED! Slowed", "#ec4899");
                     }
                     audio.playPowerup();
                     score += 150;
                     delete items[itemKey];
+                    updateHUDPerks();
                 }
 
                 // Check Exit Collision
-                if (grid[currentGy] && grid[currentGy][currentGx] === TILE.EXIT && enemies.length === 0) {
+                const isBossStage = stage % 3 === 0;
+                const canExit = isBossStage ? (boss === null) : (enemies.length === 0);
+                if (grid[currentGy] && grid[currentGy][currentGx] === TILE.EXIT && canExit) {
                     stageClear();
                 }
             }
@@ -416,13 +579,29 @@
             moveWithCollision(moveX, moveY) {
                 const slideThreshold = CELL_SIZE * 0.35;
 
+                // Check bomb kicking before moving
+                if (this.hasKick) {
+                    const targetGx = Math.floor((this.x + Math.sign(moveX) * (this.radius + 6)) / CELL_SIZE);
+                    const targetGy = Math.floor((this.y + Math.sign(moveY) * (this.radius + 6)) / CELL_SIZE);
+                    const hitBomb = bombs.find(b => b.gx === targetGx && b.gy === targetGy && !b.slideVx && !b.slideVy);
+                    if (hitBomb) {
+                        let kx = 0, ky = 0;
+                        if (Math.abs(moveX) > Math.abs(moveY)) kx = Math.sign(moveX);
+                        else ky = Math.sign(moveY);
+
+                        if (kx !== 0 || ky !== 0) {
+                            hitBomb.kick(kx, ky);
+                            audio.playKick();
+                        }
+                    }
+                }
+
                 // Try X movement with corner sliding helper
                 if (moveX !== 0) {
                     let newX = this.x + moveX;
                     if (!this.checkWallCollision(newX, this.y)) {
                         this.x = newX;
                     } else {
-                        // Corner sliding along Y
                         const currentGy = Math.floor(this.y / CELL_SIZE);
                         const centerY = (currentGy + 0.5) * CELL_SIZE;
                         const diffY = centerY - this.y;
@@ -443,7 +622,6 @@
                     if (!this.checkWallCollision(this.x, newY)) {
                         this.y = newY;
                     } else {
-                        // Corner sliding along X
                         const currentGx = Math.floor(this.x / CELL_SIZE);
                         const centerX = (currentGx + 0.5) * CELL_SIZE;
                         const diffX = centerX - this.x;
@@ -461,7 +639,6 @@
 
             checkWallCollision(x, y) {
                 const margin = this.radius * 0.8;
-                // Check 4 bounding corners of character
                 const points = [
                     { x: x - margin, y: y - margin },
                     { x: x + margin, y: y - margin },
@@ -480,7 +657,6 @@
                         return true;
                     }
 
-                    // Collision with bombs (allowed to pass until fully exited)
                     const bombOnTile = bombs.find(b => b.gx === gx && b.gy === gy);
                     if (bombOnTile && !bombOnTile.passableByPlayer) {
                         return true;
@@ -492,19 +668,28 @@
             hit() {
                 if (this.isInvincible) return;
 
+                if (this.hasShield) {
+                    this.hasShield = false;
+                    this.isInvincible = true;
+                    this.invincibleTimer = 1.2;
+                    audio.playShield();
+                    spawnBurstParticles(this.x, this.y, '#38bdf8', 25);
+                    createFloatingText(this.x, this.y, "SHIELD BROKEN!", "#38bdf8");
+                    updateHUDPerks();
+                    return;
+                }
+
                 this.lives--;
                 livesVal.textContent = this.lives;
                 audio.playHurt();
 
-                // Spawn death particles
-                spawnBurstParticles(this.x, this.y, '#ef4444', 25);
+                spawnBurstParticles(this.x, this.y, '#ef4444', 30);
 
                 if (this.lives <= 0) {
                     gameOver();
                 } else {
                     this.isInvincible = true;
-                    this.invincibleTimer = 2.0; // 2 seconds invincibility
-                    // Reset to top-left safe spawn
+                    this.invincibleTimer = 2.5;
                     this.x = (1 + 0.5) * CELL_SIZE;
                     this.y = (1 + 0.5) * CELL_SIZE;
                 }
@@ -514,7 +699,6 @@
                 ctx.save();
                 ctx.translate(this.x, this.y);
 
-                // Flashing effect if invincible
                 if (this.isInvincible && Math.floor(Date.now() / 100) % 2 === 0) {
                     ctx.globalAlpha = 0.4;
                 }
@@ -522,20 +706,31 @@
                 // Shadow
                 ctx.beginPath();
                 ctx.ellipse(0, this.radius * 0.8, this.radius * 0.8, this.radius * 0.3, 0, 0, Math.PI * 2);
-                ctx.fillStyle = 'rgba(0,0,0,0.3)';
+                ctx.fillStyle = 'rgba(0,0,0,0.35)';
                 ctx.fill();
 
-                // Character Body (White Bomber-style)
+                // Shield Aura Bubble
+                if (this.hasShield) {
+                    ctx.beginPath();
+                    ctx.arc(0, 0, this.radius + 6, 0, Math.PI * 2);
+                    ctx.fillStyle = 'rgba(56, 189, 248, 0.25)';
+                    ctx.fill();
+                    ctx.strokeStyle = '#38bdf8';
+                    ctx.lineWidth = 2;
+                    ctx.stroke();
+                }
+
+                // Character Body (White Hero)
                 ctx.beginPath();
                 ctx.arc(0, 0, this.radius, 0, Math.PI * 2);
-                ctx.fillStyle = '#f8fafc';
+                ctx.fillStyle = this.curseTimer > 0 ? '#ec4899' : '#f8fafc';
                 ctx.fill();
                 ctx.lineWidth = 3;
                 ctx.strokeStyle = '#0f172a';
                 ctx.stroke();
 
-                // Headpiece / Helmet Accent (Blue/Cyan visor)
-                ctx.fillStyle = '#0284c7';
+                // Visor / Mask Accent
+                ctx.fillStyle = this.hasRemote ? '#a855f7' : '#0284c7';
                 ctx.beginPath();
                 ctx.roundRect(-this.radius * 0.6, -this.radius * 0.4, this.radius * 1.2, this.radius * 0.7, 6);
                 ctx.fill();
@@ -554,8 +749,8 @@
                 this.x = (gx + 0.5) * CELL_SIZE;
                 this.y = (gy + 0.5) * CELL_SIZE;
                 this.radius = CELL_SIZE * 0.36;
-                this.type = type;
-                this.speed = 1.2 + type * 0.3;
+                this.type = type; // 1: Balloon, 2: Jelly, 3: Ghost, 4: Hunter
+                this.speed = 1.0 + type * 0.35;
                 this.dirs = [
                     { x: 1, y: 0 },
                     { x: -1, y: 0 },
@@ -569,24 +764,34 @@
             update(delta) {
                 this.changeDirTimer -= delta;
 
+                // Ghost (Type 3) can pass through soft walls!
+                // Hunter (Type 4) chases player if within line of sight
+                if (this.type === 4 && player && Math.random() < 0.05) {
+                    const dx = player.x - this.x;
+                    const dy = player.y - this.y;
+                    if (Math.abs(dx) > Math.abs(dy)) {
+                        this.dir = { x: Math.sign(dx), y: 0 };
+                    } else {
+                        this.dir = { x: 0, y: Math.sign(dy) };
+                    }
+                }
+
                 let nextX = this.x + this.dir.x * this.speed;
                 let nextY = this.y + this.dir.y * this.speed;
 
                 if (this.checkCollision(nextX, nextY) || this.changeDirTimer <= 0) {
-                    // Choose new direction
                     const validDirs = this.dirs.filter(d => !this.checkCollision(this.x + d.x * CELL_SIZE * 0.5, this.y + d.y * CELL_SIZE * 0.5));
                     if (validDirs.length > 0) {
                         this.dir = validDirs[Math.floor(Math.random() * validDirs.length)];
                     } else {
                         this.dir = { x: -this.dir.x, y: -this.dir.y };
                     }
-                    this.changeDirTimer = 2.0 + Math.random() * 3.0;
+                    this.changeDirTimer = 1.5 + Math.random() * 2.5;
                 } else {
                     this.x = nextX;
                     this.y = nextY;
                 }
 
-                // Check collision with player
                 if (player) {
                     const dist = Math.hypot(this.x - player.x, this.y - player.y);
                     if (dist < this.radius + player.radius) {
@@ -596,7 +801,7 @@
             }
 
             checkCollision(x, y) {
-                const margin = this.radius * 0.8;
+                const margin = this.radius * 0.75;
                 const points = [
                     { x: x - margin, y: y - margin },
                     { x: x + margin, y: y - margin },
@@ -608,7 +813,8 @@
                     const gx = Math.floor(pt.x / CELL_SIZE);
                     const gy = Math.floor(pt.y / CELL_SIZE);
                     if (gx < 0 || gx >= GRID_COLS || gy < 0 || gy >= GRID_ROWS) return true;
-                    if (grid[gy][gx] === TILE.HARD_WALL || grid[gy][gx] === TILE.SOFT_WALL) return true;
+                    if (grid[gy][gx] === TILE.HARD_WALL) return true;
+                    if (this.type !== 3 && grid[gy][gx] === TILE.SOFT_WALL) return true; // Non-ghosts blocked by soft walls
                     if (bombs.some(b => b.gx === gx && b.gy === gy)) return true;
                 }
                 return false;
@@ -618,13 +824,19 @@
                 ctx.save();
                 ctx.translate(this.x, this.y);
 
-                // Enemy Body (Balloon / Orange Jelly style)
+                let color = '#f59e0b';
+                if (this.type === 2) color = '#e11d48';
+                if (this.type === 3) color = '#a855f7';
+                if (this.type === 4) color = '#06b6d4';
+
+                if (this.type === 3) ctx.globalAlpha = 0.75; // Ghost semi-transparent
+
                 ctx.beginPath();
                 ctx.arc(0, 0, this.radius, 0, Math.PI * 2);
-                ctx.fillStyle = this.type === 1 ? '#f59e0b' : '#e11d48';
+                ctx.fillStyle = color;
                 ctx.fill();
                 ctx.lineWidth = 3;
-                ctx.strokeStyle = '#451a03';
+                ctx.strokeStyle = '#0f172a';
                 ctx.stroke();
 
                 // Eyes & Expression
@@ -644,22 +856,205 @@
             }
         }
 
+        // Boss Class: GIGA BOMB KING 👑
+        class Boss {
+            constructor(gx, gy, hp = 8) {
+                this.x = (gx + 1.0) * CELL_SIZE;
+                this.y = (gy + 1.0) * CELL_SIZE;
+                this.radius = CELL_SIZE * 0.85;
+                this.maxHp = hp;
+                this.hp = hp;
+                this.speed = 1.4;
+                this.dir = { x: 1, y: 0 };
+                this.actionTimer = 0;
+                this.isHitFlash = 0;
+            }
+
+            update(delta) {
+                if (this.isHitFlash > 0) this.isHitFlash -= delta;
+                this.actionTimer += delta;
+
+                // Move towards player slowly
+                if (player) {
+                    const dx = player.x - this.x;
+                    const dy = player.y - this.y;
+                    const dist = Math.hypot(dx, dy);
+
+                    if (dist > 0) {
+                        let nextX = this.x + (dx / dist) * this.speed;
+                        let nextY = this.y + (dy / dist) * this.speed;
+
+                        if (!this.checkCollision(nextX, nextY)) {
+                            this.x = nextX;
+                            this.y = nextY;
+                        }
+                    }
+
+                    // Collision with player
+                    if (dist < this.radius + player.radius) {
+                        player.hit();
+                    }
+                }
+
+                // Boss Special Attack: Spawn Minions periodically
+                if (this.actionTimer > 6.0) {
+                    this.actionTimer = 0;
+                    this.spawnMinions();
+                }
+
+                // Update Boss UI Bar
+                const hpPercent = Math.max(0, (this.hp / this.maxHp) * 100);
+                bossHpBar.style.width = `${hpPercent}%`;
+                bossHpText.textContent = `HP ${this.hp}/${this.maxHp}`;
+            }
+
+            checkCollision(x, y) {
+                const margin = this.radius * 0.8;
+                const points = [
+                    { x: x - margin, y: y - margin },
+                    { x: x + margin, y: y - margin },
+                    { x: x - margin, y: y + margin },
+                    { x: x + margin, y: y + margin }
+                ];
+
+                for (let pt of points) {
+                    const gx = Math.floor(pt.x / CELL_SIZE);
+                    const gy = Math.floor(pt.y / CELL_SIZE);
+                    if (gx < 0 || gx >= GRID_COLS || gy < 0 || gy >= GRID_ROWS) return true;
+                    if (grid[gy][gx] === TILE.HARD_WALL) return true;
+                }
+                return false;
+            }
+
+            spawnMinions() {
+                const bgx = Math.floor(this.x / CELL_SIZE);
+                const bgy = Math.floor(this.y / CELL_SIZE);
+                createFloatingText(this.x, this.y, "MINIONS DEPLOYED!", "#f43f5e");
+                enemies.push(new Enemy(bgx, Math.max(1, bgy - 1), 2));
+            }
+
+            hit() {
+                this.hp--;
+                this.isHitFlash = 0.3;
+                audio.playBossHit();
+                spawnBurstParticles(this.x, this.y, '#f59e0b', 20);
+
+                if (this.hp <= 0) {
+                    score += 2000;
+                    spawnBurstParticles(this.x, this.y, '#ef4444', 50);
+                    createFloatingText(this.x, this.y, "+2000 BOSS DEFEATED!", "#10b981");
+                    boss = null;
+                    bossBarContainer.classList.add('hidden');
+                    bossBarContainer.classList.remove('flex');
+                    // Reveal Exit
+                    const bgx = Math.floor(this.x / CELL_SIZE);
+                    const bgy = Math.floor(this.y / CELL_SIZE);
+                    grid[bgy][bgx] = TILE.EXIT;
+                }
+            }
+
+            draw(ctx) {
+                ctx.save();
+                ctx.translate(this.x, this.y);
+
+                // Flash white on hit
+                if (this.isHitFlash > 0) {
+                    ctx.fillStyle = '#ffffff';
+                } else {
+                    ctx.fillStyle = '#dc2626';
+                }
+
+                // Crown Boss Skull Body
+                ctx.beginPath();
+                ctx.arc(0, 0, this.radius, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.lineWidth = 4;
+                ctx.strokeStyle = '#451a03';
+                ctx.stroke();
+
+                // Golden Crown
+                ctx.fillStyle = '#f59e0b';
+                ctx.beginPath();
+                ctx.moveTo(-20, -this.radius);
+                ctx.lineTo(-25, -this.radius - 16);
+                ctx.lineTo(-10, -this.radius - 6);
+                ctx.lineTo(0, -this.radius - 22);
+                ctx.lineTo(10, -this.radius - 6);
+                ctx.lineTo(25, -this.radius - 16);
+                ctx.lineTo(20, -this.radius);
+                ctx.closePath();
+                ctx.fill();
+                ctx.stroke();
+
+                // Eyes
+                ctx.fillStyle = '#0f172a';
+                ctx.beginPath();
+                ctx.arc(-12, -6, 7, 0, Math.PI * 2);
+                ctx.arc(12, -6, 7, 0, Math.PI * 2);
+                ctx.fill();
+
+                ctx.fillStyle = '#f59e0b';
+                ctx.beginPath();
+                ctx.arc(-12, -6, 3, 0, Math.PI * 2);
+                ctx.arc(12, -6, 3, 0, Math.PI * 2);
+                ctx.fill();
+
+                ctx.restore();
+            }
+        }
+
         class Bomb {
             constructor(gx, gy, range, owner) {
                 this.gx = gx;
                 this.gy = gy;
+                this.x = (gx + 0.5) * CELL_SIZE;
+                this.y = (gy + 0.5) * CELL_SIZE;
                 this.range = range;
                 this.owner = owner;
+                this.isRemote = owner ? owner.hasRemote : false;
                 this.timer = 2.6; // Seconds to explode
                 this.scalePulse = 1;
-                this.passableByPlayer = true; // Player can walk off bomb tile after placing
+                this.passableByPlayer = true;
+                this.slideVx = 0;
+                this.slideVy = 0;
+            }
+
+            kick(dirX, dirY) {
+                this.slideVx = dirX * 6.5;
+                this.slideVy = dirY * 6.5;
+                this.passableByPlayer = false;
             }
 
             update(delta) {
-                this.timer -= delta;
+                // Sliding logic
+                if (this.slideVx !== 0 || this.slideVy !== 0) {
+                    let nextX = this.x + this.slideVx;
+                    let nextY = this.y + this.slideVy;
+
+                    const nextGx = Math.floor((nextX + Math.sign(this.slideVx) * CELL_SIZE * 0.45) / CELL_SIZE);
+                    const nextGy = Math.floor((nextY + Math.sign(this.slideVy) * CELL_SIZE * 0.45) / CELL_SIZE);
+
+                    if (nextGx < 0 || nextGx >= GRID_COLS || nextGy < 0 || nextGy >= GRID_ROWS ||
+                        grid[nextGy][nextGx] === TILE.HARD_WALL || grid[nextGy][nextGx] === TILE.SOFT_WALL ||
+                        bombs.some(b => b !== this && b.gx === nextGx && b.gy === nextGy)) {
+                        // Stop sliding and snap to cell center
+                        this.slideVx = 0;
+                        this.slideVy = 0;
+                        this.x = (this.gx + 0.5) * CELL_SIZE;
+                        this.y = (this.gy + 0.5) * CELL_SIZE;
+                    } else {
+                        this.x = nextX;
+                        this.y = nextY;
+                        this.gx = Math.floor(this.x / CELL_SIZE);
+                        this.gy = Math.floor(this.y / CELL_SIZE);
+                    }
+                }
+
+                if (!this.isRemote) {
+                    this.timer -= delta;
+                }
                 this.scalePulse = 1 + Math.sin(Date.now() * 0.015) * 0.08;
 
-                // Check if player has moved completely off the bomb tile
                 if (this.passableByPlayer && player) {
                     const margin = player.radius * 0.8;
                     const pLeft = player.x - margin;
@@ -672,32 +1067,29 @@
                     const bTop = this.gy * CELL_SIZE;
                     const bBottom = (this.gy + 1) * CELL_SIZE;
 
-                    // Standard AABB overlap test
                     const overlaps = !(pRight <= bLeft || pLeft >= bRight || pBottom <= bTop || pTop >= bBottom);
                     if (!overlaps) {
-                        this.passableByPlayer = false; // Bomb becomes solid once exited
+                        this.passableByPlayer = false;
                     }
                 }
 
-                if (this.timer <= 0) {
+                if (!this.isRemote && this.timer <= 0) {
                     this.explode();
                 }
             }
 
             explode() {
-                // Remove bomb from list
                 bombs = bombs.filter(b => b !== this);
                 if (this.owner) this.owner.activeBombs--;
 
                 audio.playExplosion();
 
-                // Spawn Explosions in 4 directions
                 const directions = [
-                    { x: 0, y: 0 },   // Center
-                    { x: 1, y: 0 },   // Right
-                    { x: -1, y: 0 },  // Left
-                    { x: 0, y: 1 },   // Down
-                    { x: 0, y: -1 }   // Up
+                    { x: 0, y: 0 },
+                    { x: 1, y: 0 },
+                    { x: -1, y: 0 },
+                    { x: 0, y: 1 },
+                    { x: 0, y: -1 }
                 ];
 
                 createExplosionTile(this.gx, this.gy);
@@ -713,46 +1105,40 @@
                         const tile = grid[targetGy][targetGx];
 
                         if (tile === TILE.HARD_WALL) {
-                            break; // Stop explosion at hard walls
+                            break;
                         }
 
                         createExplosionTile(targetGx, targetGy);
 
                         if (tile === TILE.SOFT_WALL) {
-                            // Destroy Soft Wall
                             grid[targetGy][targetGx] = TILE.EMPTY;
                             score += 20;
-
-                            // Spawn Item or reveal Exit
                             maybeSpawnItemOrExit(targetGx, targetGy);
                             spawnBurstParticles((targetGx + 0.5) * CELL_SIZE, (targetGy + 0.5) * CELL_SIZE, '#d97706', 12);
-                            break; // Explosions stop after destroying soft wall
+                            break;
                         }
 
-                        // Trigger other bombs in path (Chain Reaction)
                         const nextBomb = bombs.find(b => b.gx === targetGx && b.gy === targetGy);
                         if (nextBomb) {
-                            nextBomb.timer = 0; // Trigger instantly
+                            nextBomb.isRemote = false;
+                            nextBomb.timer = 0;
                         }
                     }
                 }
             }
 
             draw(ctx) {
-                const cx = (this.gx + 0.5) * CELL_SIZE;
-                const cy = (this.gy + 0.5) * CELL_SIZE;
-
                 ctx.save();
-                ctx.translate(cx, cy);
+                ctx.translate(this.x, this.y);
                 ctx.scale(this.scalePulse, this.scalePulse);
 
                 // Bomb Body
                 ctx.beginPath();
                 ctx.arc(0, 2, CELL_SIZE * 0.35, 0, Math.PI * 2);
-                ctx.fillStyle = '#1e293b';
+                ctx.fillStyle = this.isRemote ? '#6b21a8' : '#1e293b';
                 ctx.fill();
                 ctx.lineWidth = 3;
-                ctx.strokeStyle = '#0284c7';
+                ctx.strokeStyle = this.isRemote ? '#c084fc' : '#0284c7';
                 ctx.stroke();
 
                 // Fuse Spark
@@ -769,10 +1155,10 @@
             explosions.push({
                 gx: gx,
                 gy: gy,
-                timer: 0.45 // Duration of explosion flame
+                timer: 0.45
             });
 
-            // Check damage to Player
+            // Damage Player
             if (player) {
                 const playerGx = Math.floor(player.x / CELL_SIZE);
                 const playerGy = Math.floor(player.y / CELL_SIZE);
@@ -781,7 +1167,7 @@
                 }
             }
 
-            // Check damage to Enemies
+            // Damage Enemies
             for (let i = enemies.length - 1; i >= 0; i--) {
                 const enemy = enemies[i];
                 const enemyGx = Math.floor(enemy.x / CELL_SIZE);
@@ -790,12 +1176,20 @@
                     spawnBurstParticles(enemy.x, enemy.y, '#f43f5e', 20);
                     enemies.splice(i, 1);
                     score += 200;
-                    enemiesVal.textContent = enemies.length;
                     createFloatingText(enemy.x, enemy.y, "+200", "#34d399");
                 }
             }
 
-            // Destroy items if flame hits them
+            // Damage Boss
+            if (boss) {
+                const bossGx = Math.floor(boss.x / CELL_SIZE);
+                const bossGy = Math.floor(boss.y / CELL_SIZE);
+                if (Math.abs(bossGx - gx) <= 1 && Math.abs(bossGy - gy) <= 1) {
+                    boss.hit();
+                }
+            }
+
+            // Destroy items caught in flame
             const itemKey = `${gx}_${gy}`;
             if (items[itemKey]) {
                 delete items[itemKey];
@@ -809,63 +1203,70 @@
             explosions = [];
             particles = [];
 
+            const isBossStage = stage % 3 === 0;
+
             for (let r = 0; r < GRID_ROWS; r++) {
                 grid[r] = [];
                 for (let c = 0; c < GRID_COLS; c++) {
-                    // Outer border
                     if (r === 0 || r === GRID_ROWS - 1 || c === 0 || c === GRID_COLS - 1) {
                         grid[r][c] = TILE.HARD_WALL;
-                    }
-                    // Grid Pillars
-                    else if (r % 2 === 0 && c % 2 === 0) {
+                    } else if (r % 2 === 0 && c % 2 === 0) {
                         grid[r][c] = TILE.HARD_WALL;
-                    }
-                    // Player starting safe zone (Top-Left)
-                    else if ((r <= 2 && c <= 2)) {
+                    } else if (r <= 2 && c <= 2) {
                         grid[r][c] = TILE.EMPTY;
-                    }
-                    // Random Soft Walls
-                    else {
-                        grid[r][c] = Math.random() < 0.65 ? TILE.SOFT_WALL : TILE.EMPTY;
+                    } else if (isBossStage && r >= 4 && r <= 6 && c >= 6 && c <= 8) {
+                        grid[r][c] = TILE.EMPTY; // Clear central arena for boss
+                    } else {
+                        grid[r][c] = Math.random() < 0.60 ? TILE.SOFT_WALL : TILE.EMPTY;
                     }
                 }
             }
 
-            // Spawn Player
             player = new Player(1, 1);
 
-            // Spawn Enemies in empty locations away from start
             enemies = [];
-            const numEnemies = 3 + stage * 2;
-            let spawned = 0;
+            boss = null;
 
-            while (spawned < numEnemies) {
-                const rx = Math.floor(Math.random() * (GRID_COLS - 2)) + 1;
-                const ry = Math.floor(Math.random() * (GRID_ROWS - 2)) + 1;
+            if (isBossStage) {
+                bossBarContainer.classList.remove('hidden');
+                bossBarContainer.classList.add('flex');
+                boss = new Boss(7, 4, 6 + stage * 2);
+            } else {
+                bossBarContainer.classList.add('hidden');
+                bossBarContainer.classList.remove('flex');
 
-                if (grid[ry][rx] === TILE.EMPTY && (rx > 3 || ry > 3)) {
-                    const enemyType = Math.random() > 0.6 ? 2 : 1;
-                    enemies.push(new Enemy(rx, ry, enemyType));
-                    spawned++;
-                }
-            }
-            enemiesVal.textContent = enemies.length;
+                const numEnemies = 3 + stage * 2;
+                let spawned = 0;
+                while (spawned < numEnemies) {
+                    const rx = Math.floor(Math.random() * (GRID_COLS - 2)) + 1;
+                    const ry = Math.floor(Math.random() * (GRID_ROWS - 2)) + 1;
 
-            // Pick one soft wall to hide the Exit
-            let softWalls = [];
-            for (let r = 0; r < GRID_ROWS; r++) {
-                for (let c = 0; c < GRID_COLS; c++) {
-                    if (grid[r][c] === TILE.SOFT_WALL) {
-                        softWalls.push({ r, c });
+                    if (grid[ry][rx] === TILE.EMPTY && (rx > 3 || ry > 3)) {
+                        const enemyType = Math.min(4, Math.floor(Math.random() * (1 + stage * 0.8)) + 1);
+                        enemies.push(new Enemy(rx, ry, enemyType));
+                        spawned++;
                     }
                 }
             }
-            if (softWalls.length > 0) {
-                const exitWall = softWalls[Math.floor(Math.random() * softWalls.length)];
-                exitWall.hasExit = true;
-                grid[exitWall.r][exitWall.c] = TILE.SOFT_WALL; // Keeps softwall status, will reveal when broken
-                grid.exitCoords = { r: exitWall.r, c: exitWall.c };
+
+            // Hide Exit under a Soft Wall (if not boss stage)
+            if (!isBossStage) {
+                let softWalls = [];
+                for (let r = 0; r < GRID_ROWS; r++) {
+                    for (let c = 0; c < GRID_COLS; c++) {
+                        if (grid[r][c] === TILE.SOFT_WALL) {
+                            softWalls.push({ r, c });
+                        }
+                    }
+                }
+                if (softWalls.length > 0) {
+                    const exitWall = softWalls[Math.floor(Math.random() * softWalls.length)];
+                    grid.exitCoords = { r: exitWall.r, c: exitWall.c };
+                }
             }
+
+            stageVal.textContent = stage;
+            updateHUDPerks();
         }
 
         function maybeSpawnItemOrExit(gx, gy) {
@@ -874,16 +1275,30 @@
                 return;
             }
 
-            // 35% Chance to drop item
-            if (Math.random() < 0.35) {
+            if (Math.random() < 0.40) {
                 const rand = Math.random();
                 let type = ITEM_TYPE.FIRE;
-                if (rand < 0.4) type = ITEM_TYPE.FIRE;
-                else if (rand < 0.75) type = ITEM_TYPE.BOMB;
-                else type = ITEM_TYPE.SPEED;
+                if (rand < 0.30) type = ITEM_TYPE.FIRE;
+                else if (rand < 0.55) type = ITEM_TYPE.BOMB;
+                else if (rand < 0.75) type = ITEM_TYPE.SPEED;
+                else if (rand < 0.85) type = ITEM_TYPE.KICK;
+                else if (rand < 0.93) type = ITEM_TYPE.SHIELD;
+                else type = ITEM_TYPE.REMOTE;
 
                 items[`${gx}_${gy}`] = { gx, gy, type };
             }
+        }
+
+        function updateHUDPerks() {
+            if (!player) return;
+            fireLevel.textContent = player.bombRange;
+            bombLevel.textContent = player.maxBombs;
+            perkFire.style.opacity = player.bombRange > 1 ? "1" : "0.5";
+            perkBomb.style.opacity = player.maxBombs > 1 ? "1" : "0.5";
+            perkSpeed.style.opacity = player.speedMultiplier > 1.0 ? "1" : "0.4";
+            perkKick.style.opacity = player.hasKick ? "1" : "0.4";
+            perkShield.style.opacity = player.hasShield ? "1" : "0.4";
+            perkRemote.style.opacity = player.hasRemote ? "1" : "0.4";
         }
 
         function update(delta) {
@@ -891,12 +1306,10 @@
 
             player.update(delta);
 
-            // Update Bombs
             for (let i = bombs.length - 1; i >= 0; i--) {
                 bombs[i].update(delta);
             }
 
-            // Update Explosions
             for (let i = explosions.length - 1; i >= 0; i--) {
                 explosions[i].timer -= delta;
                 if (explosions[i].timer <= 0) {
@@ -904,10 +1317,9 @@
                 }
             }
 
-            // Update Enemies
             enemies.forEach(enemy => enemy.update(delta));
+            if (boss) boss.update(delta);
 
-            // Update Floating Particles
             for (let i = particles.length - 1; i >= 0; i--) {
                 const p = particles[i];
                 p.x += p.vx;
@@ -918,14 +1330,15 @@
                 }
             }
 
-            // Update HUD Stats
             scoreVal.textContent = String(score).padStart(5, '0');
         }
 
         function render() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
-
             if (!grid || !grid.length) return;
+
+            const themeIndex = (stage - 1) % STAGE_THEMES.length;
+            const theme = STAGE_THEMES[themeIndex];
 
             // 1. Draw Grid / Tiles
             for (let r = 0; r < GRID_ROWS; r++) {
@@ -934,34 +1347,32 @@
                     const y = r * CELL_SIZE;
                     const tile = grid[r][c];
 
-                    // Floor Ground Pattern
-                    ctx.fillStyle = (r + c) % 2 === 0 ? '#1e293b' : '#0f172a';
+                    // Floor Pattern
+                    ctx.fillStyle = (r + c) % 2 === 0 ? theme.floor1 : theme.floor2;
                     ctx.fillRect(x, y, CELL_SIZE, CELL_SIZE);
 
                     if (tile === TILE.HARD_WALL) {
-                        // Hard Unbreakable Block
-                        ctx.fillStyle = '#334155';
+                        ctx.fillStyle = theme.hardWall;
                         ctx.fillRect(x, y, CELL_SIZE, CELL_SIZE);
-                        ctx.strokeStyle = '#475569';
+                        ctx.strokeStyle = theme.hardWallBorder;
                         ctx.lineWidth = 2;
                         ctx.strokeRect(x + 2, y + 2, CELL_SIZE - 4, CELL_SIZE - 4);
                     } else if (tile === TILE.SOFT_WALL) {
-                        // Destructible Soft Wall
-                        ctx.fillStyle = '#b45309';
+                        ctx.fillStyle = theme.softWall;
                         ctx.fillRect(x + 2, y + 2, CELL_SIZE - 4, CELL_SIZE - 4);
-                        // Brick texture line
-                        ctx.strokeStyle = '#78350f';
+                        ctx.strokeStyle = theme.softWallLine;
                         ctx.lineWidth = 2;
                         ctx.beginPath();
                         ctx.moveTo(x + 2, y + CELL_SIZE / 2);
                         ctx.lineTo(x + CELL_SIZE - 2, y + CELL_SIZE / 2);
                         ctx.stroke();
                     } else if (tile === TILE.EXIT) {
-                        // Exit Portal Door
-                        ctx.fillStyle = enemies.length === 0 ? '#10b981' : '#64748b';
+                        const isBossStage = stage % 3 === 0;
+                        const isUnlocked = isBossStage ? (boss === null) : (enemies.length === 0);
+                        ctx.fillStyle = isUnlocked ? '#10b981' : '#64748b';
                         ctx.fillRect(x + 6, y + 6, CELL_SIZE - 12, CELL_SIZE - 12);
                         ctx.fillStyle = '#ffffff';
-                        ctx.font = 'bold 16px sans-serif';
+                        ctx.font = 'bold 14px sans-serif';
                         ctx.textAlign = 'center';
                         ctx.fillText('EXIT', x + CELL_SIZE / 2, y + CELL_SIZE / 2 + 5);
                     }
@@ -979,6 +1390,10 @@
                 let icon = '🔥';
                 if (item.type === ITEM_TYPE.BOMB) icon = '💣';
                 if (item.type === ITEM_TYPE.SPEED) icon = '⚡';
+                if (item.type === ITEM_TYPE.KICK) icon = '👟';
+                if (item.type === ITEM_TYPE.SHIELD) icon = '🛡️';
+                if (item.type === ITEM_TYPE.REMOTE) icon = '🎮';
+                if (item.type === ITEM_TYPE.SKULL) icon = '💀';
 
                 ctx.font = '22px sans-serif';
                 ctx.textAlign = 'center';
@@ -1002,8 +1417,9 @@
                 ctx.fillRect(ex + 8, ey + 8, CELL_SIZE - 16, CELL_SIZE - 16);
             });
 
-            // 5. Draw Enemies & Player
+            // 5. Draw Enemies, Boss & Player
             enemies.forEach(enemy => enemy.draw(ctx));
+            if (boss) boss.draw(ctx);
             if (player) player.draw(ctx);
 
             // 6. Draw Particles
@@ -1028,7 +1444,6 @@
             requestAnimationFrame(gameLoop);
         }
 
-        // Particle Helper Function
         function spawnBurstParticles(x, y, color, count = 15) {
             for (let i = 0; i < count; i++) {
                 const angle = Math.random() * Math.PI * 2;
@@ -1048,11 +1463,11 @@
 
         function createFloatingText(x, y, text, color) {
             const el = document.createElement('div');
-            el.className = 'absolute font-bold text-sm pointer-events-none transition-all duration-700 ease-out pixel-font';
+            el.className = 'absolute font-bold text-xs pointer-events-none transition-all duration-700 ease-out pixel-font';
             el.style.left = `${x}px`;
             el.style.top = `${y}px`;
             el.style.color = color;
-            el.style.textShadow = '0 2px 4px rgba(0,0,0,0.8)';
+            el.style.textShadow = '0 2px 4px rgba(0,0,0,0.9)';
             el.textContent = text;
             canvas.parentElement.appendChild(el);
 
@@ -1070,11 +1485,19 @@
             const gx = Math.floor(player.x / CELL_SIZE);
             const gy = Math.floor(player.y / CELL_SIZE);
 
-            // Check if player has bombs left and tile is empty of bombs
             if (player.activeBombs < player.maxBombs && !bombs.some(b => b.gx === gx && b.gy === gy)) {
                 bombs.push(new Bomb(gx, gy, player.bombRange, player));
                 player.activeBombs++;
                 audio.playBombDrop();
+            }
+        }
+
+        function detonateRemoteBombs() {
+            if (!player || !player.hasRemote || gameState !== 'PLAYING') return;
+            const remoteBombs = bombs.filter(b => b.owner === player && b.isRemote);
+            if (remoteBombs.length > 0) {
+                audio.playKick();
+                remoteBombs.forEach(b => b.explode());
             }
         }
 
@@ -1111,14 +1534,14 @@
             generateMap();
             showModal(`
                 <div class="space-y-4">
-                    <div class="w-20 h-20 mx-auto rounded-3xl bg-gradient-to-tr from-amber-500 to-rose-500 flex items-center justify-center title-glow shadow-2xl">
+                    <div class="w-20 h-20 mx-auto rounded-3xl bg-gradient-to-tr from-amber-500 via-rose-500 to-indigo-500 flex items-center justify-center title-glow shadow-2xl">
                         <i class="fa-solid fa-bomb text-4xl text-slate-900"></i>
                     </div>
-                    <h2 class="text-3xl font-extrabold tracking-wide text-transparent bg-clip-text bg-gradient-to-r from-amber-300 via-rose-300 to-cyan-300">
-                        BOMBER HERO
+                    <h2 class="text-3xl font-black tracking-wide text-transparent bg-clip-text bg-gradient-to-r from-amber-300 via-rose-300 to-cyan-300">
+                        BOMBER HERO EX
                     </h2>
-                    <p class="text-sm text-slate-300 leading-relaxed">
-                        Defeat all monsters and escape through the Exit portal before time runs out!
+                    <p class="text-xs text-slate-300 leading-relaxed">
+                        Defeat monsters, conquer Boss stages, collect powerful perks (👟 Bomb Kick, 🛡️ Shield, 🎮 Remote Detonator) and reach the Exit!
                     </p>
                     <button id="startBtn" class="w-full py-3.5 px-6 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 font-bold text-white shadow-lg active:scale-95 transition text-lg">
                         <i class="fa-solid fa-play mr-2"></i> START GAME
@@ -1203,7 +1626,7 @@
             }
         }
 
-        // Event Listeners for Keyboard Controls
+        // Keyboard Event Listeners
         window.addEventListener('keydown', (e) => {
             audio.init();
             if (e.code === 'KeyW' || e.code === 'ArrowUp') keys.up = true;
@@ -1213,6 +1636,9 @@
             if (e.code === 'Space') {
                 e.preventDefault();
                 placeBomb();
+            }
+            if (e.code === 'KeyE' || e.code === 'ShiftLeft' || e.code === 'ShiftRight') {
+                detonateRemoteBombs();
             }
             if (e.code === 'KeyP' || e.code === 'Escape') {
                 togglePause();
@@ -1226,7 +1652,7 @@
             if (e.code === 'KeyD' || e.code === 'ArrowRight') keys.right = false;
         });
 
-        // Touch Control Binding Helpers
+        // Touch Control Helpers
         function bindTouchButton(btnId, keyProp) {
             const btn = document.getElementById(btnId);
             if (!btn) return;
@@ -1251,6 +1677,7 @@
         bindTouchButton('btnUp', 'up');
         bindTouchButton('btnDown', 'down');
         bindTouchButton('btnLeft', 'left');
+        bindTouchButton('bindRight', 'right');
         bindTouchButton('btnRight', 'right');
 
         const btnBomb = document.getElementById('btnBomb');
@@ -1264,7 +1691,16 @@
             placeBomb();
         });
 
-        // Audio & Pause Header Buttons
+        btnDetonate.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            audio.init();
+            detonateRemoteBombs();
+        });
+        btnDetonate.addEventListener('click', () => {
+            audio.init();
+            detonateRemoteBombs();
+        });
+
         soundToggleBtn.onclick = () => {
             audio.muted = !audio.muted;
             soundIcon.className = audio.muted ? 'fa-solid fa-volume-xmark text-rose-400' : 'fa-solid fa-volume-high text-lg';
@@ -1272,7 +1708,6 @@
 
         pauseBtn.onclick = togglePause;
 
-        // Start Game Engine on Load
         window.onload = () => {
             showStartScreen();
             requestAnimationFrame(gameLoop);
