@@ -84,7 +84,7 @@
                     BOMBER HERO EX
                 </h1>
                 <div class="flex items-center gap-2 text-xs text-slate-400 mt-0.5">
-                    <span class="px-1.5 py-0.5 rounded bg-slate-800 border border-slate-700/80 font-mono text-[10px] text-amber-400 font-bold tracking-tight">v1.2.0</span>
+                    <span class="px-1.5 py-0.5 rounded bg-slate-800 border border-slate-700/80 font-mono text-[10px] text-amber-400 font-bold tracking-tight">v1.3.0</span>
                     <span class="hidden sm:inline">Boss Battles & Special Abilities</span>
                 </div>
             </div>
@@ -129,8 +129,8 @@
 
         <!-- Perks & Power-ups Indicators -->
         <div class="flex items-center gap-1.5 px-3 py-1 bg-slate-800/90 rounded-xl border border-slate-700/50" id="perksContainer">
-            <span id="perkFire" class="opacity-40 transition-opacity" title="Flame Range">🔥<span id="fireLevel">1</span></span>
-            <span id="perkBomb" class="opacity-40 transition-opacity" title="Max Bombs">💣<span id="bombLevel">1</span></span>
+            <span id="perkFire" class="opacity-40 transition-opacity" title="Flame Range (Max 8)">🔥<span id="fireLevel">1</span></span>
+            <span id="perkBomb" class="opacity-40 transition-opacity" title="Max Bombs (Max 10)">💣<span id="bombLevel">1</span></span>
             <span id="perkSpeed" class="opacity-40 transition-opacity" title="Speed Level (Max Lv.3)">⚡<span id="speedLevel">1</span></span>
             <span id="perkKick" class="opacity-40 transition-opacity" title="Bomb Kick">👟</span>
             <span id="perkShield" class="opacity-40 transition-opacity" title="Shield">🛡️</span>
@@ -378,12 +378,13 @@
             EMPTY: 0,
             HARD_WALL: 1,
             SOFT_WALL: 2,
-            EXIT: 3
+            EXIT: 3,
+            DURABLE_WALL: 4
         };
 
         const ITEM_TYPE = {
-            FIRE: 1,    // 🔥 Bomb Range + 1
-            BOMB: 2,    // 💣 Max Bombs + 1
+            FIRE: 1,    // 🔥 Bomb Range + 1 (Max 8)
+            BOMB: 2,    // 💣 Max Bombs + 1 (Max 10)
             SPEED: 3,   // ⚡ Speed + 20% (Max 2 Stages)
             KICK: 4,    // 👟 Kick Bombs
             SHIELD: 5,  // 🛡️ Protects 1 Hit
@@ -544,11 +545,19 @@
                 if (items[itemKey]) {
                     const item = items[itemKey];
                     if (item.type === ITEM_TYPE.FIRE) {
-                        this.bombRange++;
-                        createFloatingText(this.x, this.y, "FIRE +1!", "#f97316");
+                        if (this.bombRange < 8) {
+                            this.bombRange++;
+                            createFloatingText(this.x, this.y, `FIRE +1! (${this.bombRange})`, "#f97316");
+                        } else {
+                            createFloatingText(this.x, this.y, "FIRE MAX!", "#f97316");
+                        }
                     } else if (item.type === ITEM_TYPE.BOMB) {
-                        this.maxBombs++;
-                        createFloatingText(this.x, this.y, "BOMB +1!", "#3b82f6");
+                        if (this.maxBombs < 10) {
+                            this.maxBombs++;
+                            createFloatingText(this.x, this.y, `BOMB +1! (${this.maxBombs})`, "#3b82f6");
+                        } else {
+                            createFloatingText(this.x, this.y, "BOMB MAX!", "#3b82f6");
+                        }
                     } else if (item.type === ITEM_TYPE.SPEED) {
                         if (this.speedLevel < 3) {
                             this.speedLevel++;
@@ -700,7 +709,7 @@
                 const gy = Math.floor(py / CELL_SIZE);
                 if (gx < 0 || gx >= GRID_COLS || gy < 0 || gy >= GRID_ROWS) return true;
                 const tile = grid[gy][gx];
-                if (tile === TILE.HARD_WALL || tile === TILE.SOFT_WALL) return true;
+                if (tile === TILE.HARD_WALL || tile === TILE.SOFT_WALL || tile === TILE.DURABLE_WALL) return true;
                 const bombOnTile = bombs.find(b => b.gx === gx && b.gy === gy);
                 if (bombOnTile && !bombOnTile.passableByPlayer) return true;
                 return false;
@@ -722,7 +731,7 @@
                     if (gx < 0 || gx >= GRID_COLS || gy < 0 || gy >= GRID_ROWS) return true;
 
                     const tile = grid[gy][gx];
-                    if (tile === TILE.HARD_WALL || tile === TILE.SOFT_WALL) {
+                    if (tile === TILE.HARD_WALL || tile === TILE.SOFT_WALL || tile === TILE.DURABLE_WALL) {
                         return true;
                     }
 
@@ -897,7 +906,7 @@
                     const gy = Math.floor(pt.y / CELL_SIZE);
                     if (gx < 0 || gx >= GRID_COLS || gy < 0 || gy >= GRID_ROWS) return true;
                     if (grid[gy][gx] === TILE.HARD_WALL) return true;
-                    if (this.type !== 3 && grid[gy][gx] === TILE.SOFT_WALL) return true; // Non-ghosts blocked by soft walls
+                    if (this.type !== 3 && (grid[gy][gx] === TILE.SOFT_WALL || grid[gy][gx] === TILE.DURABLE_WALL)) return true; // Non-ghosts blocked by soft/durable walls
                     if (bombs.some(b => b.gx === gx && b.gy === gy)) return true;
                 }
                 return false;
@@ -907,12 +916,74 @@
                 ctx.save();
                 ctx.translate(this.x, this.y);
 
+                // Type 3: Ethereal Wall-Passing Ghost 👻
+                if (this.type === 3) {
+                    const r = this.radius;
+                    const bob = Math.sin(Date.now() / 180) * 2.5; // Ethereal floating animation
+                    ctx.translate(0, bob);
+                    ctx.globalAlpha = 0.85;
+
+                    // Ghost Purple Ethereal Glow
+                    ctx.shadowColor = '#c084fc';
+                    ctx.shadowBlur = 10;
+
+                    // Ghost Body Path (Rounded Dome Head + Scalloped Wavy Skirt)
+                    ctx.beginPath();
+                    ctx.arc(0, -r * 0.2, r * 0.9, Math.PI, 0);
+                    ctx.lineTo(r * 0.9, r * 0.65);
+                    ctx.quadraticCurveTo(r * 0.45, r * 1.15, 0, r * 0.65);
+                    ctx.quadraticCurveTo(-r * 0.45, r * 1.15, -r * 0.9, r * 0.65);
+                    ctx.closePath();
+
+                    // Spectral Gradient Fill
+                    const grad = ctx.createLinearGradient(0, -r, 0, r);
+                    grad.addColorStop(0, '#f5f3ff');  // Light ethereal white-violet top
+                    grad.addColorStop(0.5, '#c084fc'); // Vibrant lavender purple
+                    grad.addColorStop(1, '#7e22ce');   // Deep spectral purple skirt
+                    ctx.fillStyle = grad;
+                    ctx.fill();
+
+                    ctx.shadowBlur = 0; // Reset shadow for crisp outline & eyes
+                    ctx.lineWidth = 2.2;
+                    ctx.strokeStyle = '#4c1d95';
+                    ctx.stroke();
+
+                    // Expressive Ghost Eyes
+                    const eyeDx = this.dir.x * 2.5;
+                    const eyeDy = this.dir.y * 2.5;
+
+                    // Left Eye
+                    ctx.fillStyle = '#ffffff';
+                    ctx.beginPath();
+                    ctx.ellipse(-r * 0.36 + eyeDx, -r * 0.25 + eyeDy, 5, 6.5, 0, 0, Math.PI * 2);
+                    ctx.fill();
+
+                    // Right Eye
+                    ctx.beginPath();
+                    ctx.ellipse(r * 0.36 + eyeDx, -r * 0.25 + eyeDy, 5, 6.5, 0, 0, Math.PI * 2);
+                    ctx.fill();
+
+                    // Pupils
+                    ctx.fillStyle = '#3b0764';
+                    ctx.beginPath();
+                    ctx.arc(-r * 0.36 + eyeDx * 1.4, -r * 0.25 + eyeDy * 1.4, 2.5, 0, Math.PI * 2);
+                    ctx.arc(r * 0.36 + eyeDx * 1.4, -r * 0.25 + eyeDy * 1.4, 2.5, 0, Math.PI * 2);
+                    ctx.fill();
+
+                    // O-shaped Spooky Ghost Mouth
+                    ctx.beginPath();
+                    ctx.ellipse(0 + eyeDx, r * 0.15 + eyeDy, 2.8, 4, 0, 0, Math.PI * 2);
+                    ctx.fillStyle = '#3b0764';
+                    ctx.fill();
+
+                    ctx.restore();
+                    return;
+                }
+
+                // Standard Enemies (Type 1, 2, 4)
                 let color = '#f59e0b';
                 if (this.type === 2) color = '#e11d48';
-                if (this.type === 3) color = '#a855f7';
                 if (this.type === 4) color = '#06b6d4';
-
-                if (this.type === 3) ctx.globalAlpha = 0.75; // Ghost semi-transparent
 
                 ctx.beginPath();
                 ctx.arc(0, 0, this.radius, 0, Math.PI * 2);
@@ -1118,7 +1189,7 @@
                     const nextGy = Math.floor((nextY + Math.sign(this.slideVy) * CELL_SIZE * 0.45) / CELL_SIZE);
 
                     if (nextGx < 0 || nextGx >= GRID_COLS || nextGy < 0 || nextGy >= GRID_ROWS ||
-                        grid[nextGy][nextGx] === TILE.HARD_WALL || grid[nextGy][nextGx] === TILE.SOFT_WALL ||
+                        grid[nextGy][nextGx] === TILE.HARD_WALL || grid[nextGy][nextGx] === TILE.SOFT_WALL || grid[nextGy][nextGx] === TILE.DURABLE_WALL ||
                         bombs.some(b => b !== this && b.gx === nextGx && b.gy === nextGy)) {
                         // Stop sliding and snap to cell center
                         this.slideVx = 0;
@@ -1201,6 +1272,26 @@
                             break;
                         }
 
+                        if (tile === TILE.DURABLE_WALL) {
+                            const key = `${targetGy}_${targetGx}`;
+                            const hp = (grid.durableHp && grid.durableHp[key]) ? grid.durableHp[key] : 2;
+
+                            if (hp > 1) {
+                                grid.durableHp[key] = 1;
+                                audio.playKick();
+                                spawnBurstParticles((targetGx + 0.5) * CELL_SIZE, (targetGy + 0.5) * CELL_SIZE, '#38bdf8', 15);
+                                createFloatingText((targetGx + 0.5) * CELL_SIZE, (targetGy + 0.5) * CELL_SIZE, "CRACKED!", "#38bdf8");
+                            } else {
+                                grid[targetGy][targetGx] = TILE.EMPTY;
+                                delete grid.durableHp[key];
+                                score += 40;
+                                maybeSpawnItemOrExit(targetGx, targetGy);
+                                spawnBurstParticles((targetGx + 0.5) * CELL_SIZE, (targetGy + 0.5) * CELL_SIZE, '#0284c7', 20);
+                                createFloatingText((targetGx + 0.5) * CELL_SIZE, (targetGy + 0.5) * CELL_SIZE, "+40", "#34d399");
+                            }
+                            break;
+                        }
+
                         const nextBomb = bombs.find(b => b.gx === targetGx && b.gy === targetGy);
                         if (nextBomb) {
                             nextBomb.isRemote = false;
@@ -1277,6 +1368,21 @@
             if (items[itemKey]) {
                 delete items[itemKey];
             }
+
+            // Hit Exposed EXIT Tile -> Spawn 2 Enemies
+            if (grid[gy] && grid[gy][gx] === TILE.EXIT) {
+                const now = Date.now();
+                if (!grid.lastExitHitTime || now - grid.lastExitHitTime > 800) {
+                    grid.lastExitHitTime = now;
+                    for (let i = 0; i < 2; i++) {
+                        const enemyType = Math.min(4, Math.floor(Math.random() * (1 + stage * 0.8)) + 1);
+                        enemies.push(new Enemy(gx, gy, enemyType));
+                    }
+                    audio.playHurt();
+                    spawnBurstParticles((gx + 0.5) * CELL_SIZE, (gy + 0.5) * CELL_SIZE, '#ec4899', 25);
+                    createFloatingText((gx + 0.5) * CELL_SIZE, (gy + 0.5) * CELL_SIZE, "ENEMIES SPAWNED! +2", "#ef4444");
+                }
+            }
         }
 
         function generateMap() {
@@ -1341,12 +1447,32 @@
                 }
             }
 
-            // Hide Exit under a Soft Wall (if not boss stage)
+            // Spawn Durable Blocks based on quotient of stage / 3 (Stage 3+ => 1, Stage 6+ => 2, Stage 9+ => 3...)
+            grid.durableHp = {};
+            const durableCount = Math.floor(stage / 3);
+            if (durableCount > 0) {
+                const candidates = [];
+                for (let r = 0; r < GRID_ROWS; r++) {
+                    for (let c = 0; c < GRID_COLS; c++) {
+                        if (grid[r][c] === TILE.SOFT_WALL) {
+                            candidates.push({ r, c });
+                        }
+                    }
+                }
+                for (let i = 0; i < durableCount && candidates.length > 0; i++) {
+                    const idx = Math.floor(Math.random() * candidates.length);
+                    const coord = candidates.splice(idx, 1)[0];
+                    grid[coord.r][coord.c] = TILE.DURABLE_WALL;
+                    grid.durableHp[`${coord.r}_${coord.c}`] = 2;
+                }
+            }
+
+            // Hide Exit under a Soft or Durable Wall (if not boss stage)
             if (!isBossStage) {
                 let softWalls = [];
                 for (let r = 0; r < GRID_ROWS; r++) {
                     for (let c = 0; c < GRID_COLS; c++) {
-                        if (grid[r][c] === TILE.SOFT_WALL) {
+                        if (grid[r][c] === TILE.SOFT_WALL || grid[r][c] === TILE.DURABLE_WALL) {
                             softWalls.push({ r, c });
                         }
                     }
@@ -1367,32 +1493,40 @@
                 return;
             }
 
+            // Filter candidate items to only those the player can actually benefit from acquiring
+            const currentItems = Object.values(items);
+            const fireOnMap = currentItems.filter(i => i.type === ITEM_TYPE.FIRE).length;
+            const bombOnMap = currentItems.filter(i => i.type === ITEM_TYPE.BOMB).length;
+            const speedOnMap = currentItems.filter(i => i.type === ITEM_TYPE.SPEED).length;
+            const kickOnMap = currentItems.some(i => i.type === ITEM_TYPE.KICK);
+            const shieldOnMap = currentItems.some(i => i.type === ITEM_TYPE.SHIELD);
+            const remoteOnMap = currentItems.some(i => i.type === ITEM_TYPE.REMOTE);
+
+            const candidates = [];
+
+            if (!player || (player.bombRange + fireOnMap < 8)) {
+                candidates.push({ type: ITEM_TYPE.FIRE, weight: 30 });
+            }
+            if (!player || (player.maxBombs + bombOnMap < 10)) {
+                candidates.push({ type: ITEM_TYPE.BOMB, weight: 25 });
+            }
+            if (!player || (player.speedLevel + speedOnMap < 3)) {
+                candidates.push({ type: ITEM_TYPE.SPEED, weight: 20 });
+            }
+            if (!player || (!player.hasKick && !kickOnMap)) {
+                candidates.push({ type: ITEM_TYPE.KICK, weight: 10 });
+            }
+            if (!player || (!player.hasShield && !shieldOnMap)) {
+                candidates.push({ type: ITEM_TYPE.SHIELD, weight: 8 });
+            }
+            if (!player || (!player.hasRemote && !remoteOnMap)) {
+                candidates.push({ type: ITEM_TYPE.REMOTE, weight: 7 });
+            }
+
+            // If player has maxed all effective items (and map has remaining caps), drop nothing
+            if (candidates.length === 0) return;
+
             if (Math.random() < 0.40) {
-                // Filter candidate items to only those the player can actually benefit from
-                const currentItems = Object.values(items);
-                const speedOnMap = currentItems.filter(i => i.type === ITEM_TYPE.SPEED).length;
-                const kickOnMap = currentItems.some(i => i.type === ITEM_TYPE.KICK);
-                const shieldOnMap = currentItems.some(i => i.type === ITEM_TYPE.SHIELD);
-                const remoteOnMap = currentItems.some(i => i.type === ITEM_TYPE.REMOTE);
-
-                const candidates = [
-                    { type: ITEM_TYPE.FIRE, weight: 30 },
-                    { type: ITEM_TYPE.BOMB, weight: 25 }
-                ];
-
-                if (!player || (player.speedLevel + speedOnMap < 3)) {
-                    candidates.push({ type: ITEM_TYPE.SPEED, weight: 20 });
-                }
-                if (!player || (!player.hasKick && !kickOnMap)) {
-                    candidates.push({ type: ITEM_TYPE.KICK, weight: 10 });
-                }
-                if (!player || (!player.hasShield && !shieldOnMap)) {
-                    candidates.push({ type: ITEM_TYPE.SHIELD, weight: 8 });
-                }
-                if (!player || (!player.hasRemote && !remoteOnMap)) {
-                    candidates.push({ type: ITEM_TYPE.REMOTE, weight: 7 });
-                }
-
                 const totalWeight = candidates.reduce((sum, c) => sum + c.weight, 0);
                 let randVal = Math.random() * totalWeight;
                 let selectedType = candidates[0].type;
@@ -1495,6 +1629,46 @@
                         ctx.moveTo(x + 2, y + CELL_SIZE / 2);
                         ctx.lineTo(x + CELL_SIZE - 2, y + CELL_SIZE / 2);
                         ctx.stroke();
+                    } else if (tile === TILE.DURABLE_WALL) {
+                        const hp = (grid.durableHp && grid.durableHp[`${r}_${c}`]) ? grid.durableHp[`${r}_${c}`] : 2;
+
+                        // Steel Blue Reinforced Block
+                        ctx.fillStyle = '#0284c7';
+                        ctx.fillRect(x + 2, y + 2, CELL_SIZE - 4, CELL_SIZE - 4);
+                        ctx.strokeStyle = '#38bdf8';
+                        ctx.lineWidth = 2.5;
+                        ctx.strokeRect(x + 3, y + 3, CELL_SIZE - 6, CELL_SIZE - 6);
+
+                        // Inner Plate Accent
+                        ctx.fillStyle = '#075985';
+                        ctx.fillRect(x + 8, y + 8, CELL_SIZE - 16, CELL_SIZE - 16);
+
+                        if (hp > 1) {
+                            // Full HP (2 hits required) -> Shield Icon
+                            ctx.fillStyle = '#38bdf8';
+                            ctx.font = 'bold 12px sans-serif';
+                            ctx.textAlign = 'center';
+                            ctx.textBaseline = 'middle';
+                            ctx.fillText('🛡️2', x + CELL_SIZE / 2, y + CELL_SIZE / 2);
+                        } else {
+                            // Damaged HP (1 hit remaining) -> Red Cracks
+                            ctx.strokeStyle = '#ef4444';
+                            ctx.lineWidth = 2;
+                            ctx.beginPath();
+                            ctx.moveTo(x + 10, y + 8);
+                            ctx.lineTo(x + 22, y + 24);
+                            ctx.lineTo(x + 18, y + 40);
+                            ctx.moveTo(x + 38, y + 10);
+                            ctx.lineTo(x + 26, y + 28);
+                            ctx.lineTo(x + 34, y + 38);
+                            ctx.stroke();
+
+                            ctx.fillStyle = '#f87171';
+                            ctx.font = 'bold 12px sans-serif';
+                            ctx.textAlign = 'center';
+                            ctx.textBaseline = 'middle';
+                            ctx.fillText('💥1', x + CELL_SIZE / 2, y + CELL_SIZE / 2);
+                        }
                     } else if (tile === TILE.EXIT) {
                         const isBossStage = stage % 3 === 0;
                         const isUnlocked = isBossStage ? (boss === null) : (enemies.length === 0);
@@ -1669,8 +1843,8 @@
                     <h2 class="text-3xl font-black tracking-wide text-transparent bg-clip-text bg-gradient-to-r from-amber-300 via-rose-300 to-cyan-300">
                         BOMBER HERO EX
                     </h2>
-                    <div class="inline-block px-2 py-0.5 rounded-md bg-slate-800 border border-slate-700/80 font-mono text-xs text-amber-400 font-bold">
-                        v1.2.0
+                    <div class="inline-block px-2 py-0.5 rounded-md bg-slate-800 border border-slate-700/80 font-mono text-[10px] text-amber-400 font-bold">
+                        v1.3.0
                     </div>
                     <p class="text-xs text-slate-300 leading-relaxed">
                         Defeat monsters, conquer Boss stages, collect powerful perks (👟 Bomb Kick, 🛡️ Shield, 🎮 Remote Detonator) and reach the Exit!
