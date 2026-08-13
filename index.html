@@ -124,14 +124,14 @@
         <div class="flex items-center gap-2 px-3 py-1 bg-slate-800/90 rounded-xl border border-slate-700/50">
             <i class="fa-solid fa-clock text-cyan-400 text-lg"></i>
             <span class="text-slate-400 text-xs sm:text-sm">TIME:</span>
-            <span id="timeVal" class="font-bold text-cyan-300 pixel-font text-sm">180</span>
+            <span id="timeVal" class="font-bold text-cyan-300 pixel-font text-sm">200</span>
         </div>
 
         <!-- Perks & Power-ups Indicators -->
         <div class="flex items-center gap-1.5 px-3 py-1 bg-slate-800/90 rounded-xl border border-slate-700/50" id="perksContainer">
             <span id="perkFire" class="opacity-40 transition-opacity" title="Flame Range">🔥<span id="fireLevel">1</span></span>
             <span id="perkBomb" class="opacity-40 transition-opacity" title="Max Bombs">💣<span id="bombLevel">1</span></span>
-            <span id="perkSpeed" class="opacity-40 transition-opacity" title="Speed">⚡</span>
+            <span id="perkSpeed" class="opacity-40 transition-opacity" title="Speed Level (Max Lv.3)">⚡<span id="speedLevel">1</span></span>
             <span id="perkKick" class="opacity-40 transition-opacity" title="Bomb Kick">👟</span>
             <span id="perkShield" class="opacity-40 transition-opacity" title="Shield">🛡️</span>
             <span id="perkRemote" class="opacity-40 transition-opacity" title="Remote Detonator">🎮</span>
@@ -384,7 +384,7 @@
         const ITEM_TYPE = {
             FIRE: 1,    // 🔥 Bomb Range + 1
             BOMB: 2,    // 💣 Max Bombs + 1
-            SPEED: 3,   // ⚡ Speed + 20%
+            SPEED: 3,   // ⚡ Speed + 20% (Max 2 Stages)
             KICK: 4,    // 👟 Kick Bombs
             SHIELD: 5,  // 🛡️ Protects 1 Hit
             REMOTE: 6,  // 🎮 Remote Detonator
@@ -449,6 +449,7 @@
         const perkRemote = document.getElementById('perkRemote');
         const fireLevel = document.getElementById('fireLevel');
         const bombLevel = document.getElementById('bombLevel');
+        const speedLevel = document.getElementById('speedLevel');
 
         // Game State Variables
         let gameState = 'START'; // 'START', 'PLAYING', 'PAUSED', 'GAMEOVER', 'CLEAR'
@@ -463,7 +464,7 @@
 
         let score = 0;
         let stage = 1;
-        let timeRemaining = 180;
+        let timeRemaining = 200;
         let timerInterval = null;
         let lastFrameTime = 0;
 
@@ -483,6 +484,7 @@
                 this.y = (gy + 0.5) * CELL_SIZE;
                 this.radius = CELL_SIZE * 0.38;
                 this.baseSpeed = 2.4;
+                this.speedLevel = 1;
                 this.speedMultiplier = 1.0;
                 this.maxBombs = 1;
                 this.bombRange = 1;
@@ -548,8 +550,13 @@
                         this.maxBombs++;
                         createFloatingText(this.x, this.y, "BOMB +1!", "#3b82f6");
                     } else if (item.type === ITEM_TYPE.SPEED) {
-                        this.speedMultiplier = Math.min(this.speedMultiplier + 0.2, 2.0);
-                        createFloatingText(this.x, this.y, "SPEED UP!", "#10b981");
+                        if (this.speedLevel < 3) {
+                            this.speedLevel++;
+                            this.speedMultiplier = 1.0 + (this.speedLevel - 1) * 0.2;
+                            createFloatingText(this.x, this.y, `SPEED UP Lv.${this.speedLevel}!`, "#10b981");
+                        } else {
+                            createFloatingText(this.x, this.y, "SPEED MAX!", "#10b981");
+                        }
                     } else if (item.type === ITEM_TYPE.KICK) {
                         this.hasKick = true;
                         createFloatingText(this.x, this.y, "BOMB KICK!", "#eab308");
@@ -601,8 +608,20 @@
 
                 const slideSpeed = Math.min(this.speed * 1.15, CELL_SIZE * 0.14);
 
-                // 1. Horizontal Movement with Smooth Corner Assist
+                // 1. Horizontal Movement with Smooth Corner Assist & Corridor Auto-Centering
                 if (moveX !== 0) {
+                    // Auto-center along Y axis if only moving horizontally
+                    if (moveY === 0) {
+                        const targetY = (Math.floor(this.y / CELL_SIZE) + 0.5) * CELL_SIZE;
+                        const diffY = targetY - this.y;
+                        if (Math.abs(diffY) > 0.05) {
+                            const stepY = Math.sign(diffY) * Math.min(Math.abs(diffY), this.speed * 0.45);
+                            if (!this.checkWallCollision(this.x, this.y + stepY)) {
+                                this.y += stepY;
+                            }
+                        }
+                    }
+
                     let newX = this.x + moveX;
                     if (!this.checkWallCollision(newX, this.y)) {
                         this.x = newX;
@@ -632,8 +651,20 @@
                     }
                 }
 
-                // 2. Vertical Movement with Smooth Corner Assist
+                // 2. Vertical Movement with Smooth Corner Assist & Corridor Auto-Centering
                 if (moveY !== 0) {
+                    // Auto-center along X axis if only moving vertically
+                    if (moveX === 0) {
+                        const targetX = (Math.floor(this.x / CELL_SIZE) + 0.5) * CELL_SIZE;
+                        const diffX = targetX - this.x;
+                        if (Math.abs(diffX) > 0.05) {
+                            const stepX = Math.sign(diffX) * Math.min(Math.abs(diffX), this.speed * 0.45);
+                            if (!this.checkWallCollision(this.x + stepX, this.y)) {
+                                this.x += stepX;
+                            }
+                        }
+                    }
+
                     let newY = this.y + moveY;
                     if (!this.checkWallCollision(this.x, newY)) {
                         this.y = newY;
@@ -738,6 +769,7 @@
             resetPowerups() {
                 this.bombRange = 1;
                 this.maxBombs = 1;
+                this.speedLevel = 1;
                 this.speedMultiplier = 1.0;
                 this.hasKick = false;
                 this.hasShield = false;
@@ -1336,16 +1368,44 @@
             }
 
             if (Math.random() < 0.40) {
-                const rand = Math.random();
-                let type = ITEM_TYPE.FIRE;
-                if (rand < 0.30) type = ITEM_TYPE.FIRE;
-                else if (rand < 0.55) type = ITEM_TYPE.BOMB;
-                else if (rand < 0.75) type = ITEM_TYPE.SPEED;
-                else if (rand < 0.85) type = ITEM_TYPE.KICK;
-                else if (rand < 0.93) type = ITEM_TYPE.SHIELD;
-                else type = ITEM_TYPE.REMOTE;
+                // Filter candidate items to only those the player can actually benefit from
+                const currentItems = Object.values(items);
+                const speedOnMap = currentItems.filter(i => i.type === ITEM_TYPE.SPEED).length;
+                const kickOnMap = currentItems.some(i => i.type === ITEM_TYPE.KICK);
+                const shieldOnMap = currentItems.some(i => i.type === ITEM_TYPE.SHIELD);
+                const remoteOnMap = currentItems.some(i => i.type === ITEM_TYPE.REMOTE);
 
-                items[`${gx}_${gy}`] = { gx, gy, type };
+                const candidates = [
+                    { type: ITEM_TYPE.FIRE, weight: 30 },
+                    { type: ITEM_TYPE.BOMB, weight: 25 }
+                ];
+
+                if (!player || (player.speedLevel + speedOnMap < 3)) {
+                    candidates.push({ type: ITEM_TYPE.SPEED, weight: 20 });
+                }
+                if (!player || (!player.hasKick && !kickOnMap)) {
+                    candidates.push({ type: ITEM_TYPE.KICK, weight: 10 });
+                }
+                if (!player || (!player.hasShield && !shieldOnMap)) {
+                    candidates.push({ type: ITEM_TYPE.SHIELD, weight: 8 });
+                }
+                if (!player || (!player.hasRemote && !remoteOnMap)) {
+                    candidates.push({ type: ITEM_TYPE.REMOTE, weight: 7 });
+                }
+
+                const totalWeight = candidates.reduce((sum, c) => sum + c.weight, 0);
+                let randVal = Math.random() * totalWeight;
+                let selectedType = candidates[0].type;
+
+                for (const candidate of candidates) {
+                    if (randVal < candidate.weight) {
+                        selectedType = candidate.type;
+                        break;
+                    }
+                    randVal -= candidate.weight;
+                }
+
+                items[`${gx}_${gy}`] = { gx, gy, type: selectedType };
             }
         }
 
@@ -1353,9 +1413,10 @@
             if (!player) return;
             fireLevel.textContent = player.bombRange;
             bombLevel.textContent = player.maxBombs;
+            speedLevel.textContent = player.speedLevel;
             perkFire.style.opacity = player.bombRange > 1 ? "1" : "0.5";
             perkBomb.style.opacity = player.maxBombs > 1 ? "1" : "0.5";
-            perkSpeed.style.opacity = player.speedMultiplier > 1.0 ? "1" : "0.4";
+            perkSpeed.style.opacity = player.speedLevel > 1 ? "1" : "0.4";
             perkKick.style.opacity = player.hasKick ? "1" : "0.4";
             perkShield.style.opacity = player.hasShield ? "1" : "0.4";
             perkRemote.style.opacity = player.hasRemote ? "1" : "0.4";
@@ -1571,7 +1632,7 @@
 
         function startTimer() {
             clearInterval(timerInterval);
-            timeRemaining = 180;
+            timeRemaining = 200;
             timeVal.textContent = timeRemaining;
 
             timerInterval = setInterval(() => {
